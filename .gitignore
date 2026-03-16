@@ -1,0 +1,37 @@
+# Secrets — NUNCA en git
+.env
+.env.local
+.env.production
+
+# Node
+node_modules/
+.pnp
+.pnp.js
+
+# Bun
+bun.lockb
+
+# Next.js
+mc-panel/.next/
+mc-panel/out/
+
+# Build outputs
+mc-api/dist/
+mc-panel/.next/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker/minecraft/server.jar
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
