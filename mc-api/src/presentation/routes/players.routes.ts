@@ -21,7 +21,7 @@ export function createPlayersRouter(
     const server = await serverRepo.findById(serverId);
     if (!server) throw new Error("Servidor no encontrado");
     if (server.status !== "running") throw new Error("El servidor no está corriendo");
-    const host = DockerFactory.getContainerName(serverId);
+    const host = DockerFactory.getRconHost(serverId);
     return { host, port: server.rconPort, password: server.rconPassword };
   }
 
