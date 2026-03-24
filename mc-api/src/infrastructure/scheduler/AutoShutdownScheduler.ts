@@ -48,9 +48,9 @@ export class AutoShutdownScheduler {
 
     for (const server of runningServers) {
       try {
-        const containerName = DockerFactory.getContainerName(server.id);
+        const rconHost = DockerFactory.getRconHost(server.id);
         const result = await this.rconService.getPlayerList(
-          containerName, // Docker resolverá el nombre del contenedor como hostname
+          rconHost,
           server.rconPort,
           server.rconPassword
         );
