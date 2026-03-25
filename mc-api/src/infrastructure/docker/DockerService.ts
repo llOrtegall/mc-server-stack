@@ -95,7 +95,7 @@ export class DockerService {
       tail: options.tail ?? 100,
     });
 
-    const logStream = stream as NodeJS.ReadableStream;
+    const logStream = stream as NodeJS.ReadableStream & { destroy?: () => void };
     logStream.on("data", (chunk: Buffer) => {
       // Los logs de Docker tienen un header de 8 bytes que hay que remover
       const raw = chunk.toString("utf8");
@@ -110,7 +110,7 @@ export class DockerService {
     });
 
     return () => {
-      logStream.destroy();
+      logStream.destroy?.();
     };
   }
 
