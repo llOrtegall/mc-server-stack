@@ -76,18 +76,23 @@ export class ConsoleGateway {
 
         // Si no hay un stream activo para este servidor, iniciarlo
         if (!this.activeStreams.has(serverId)) {
-          const stopStream = await this.dockerService.streamLogs(
-            server.containerId,
-            (line) => {
-              this.io.to(`server:${serverId}`).emit("console:line", {
-                serverId,
-                line,
-                timestamp: new Date().toISOString(),
-              });
-            },
-            { tail: 100 }
-          );
-          this.activeStreams.set(serverId, stopStream);
+          try {
+            const stopStream = await this.dockerService.streamLogs(
+              server.containerId,
+              (line) => {
+                this.io.to(`server:${serverId}`).emit("console:line", {
+                  serverId,
+                  line,
+                  timestamp: new Date().toISOString(),
+                });
+              },
+              { tail: 100 }
+            );
+            this.activeStreams.set(serverId, stopStream);
+          } catch (err) {
+            logger.error(`Error al iniciar stream de logs para ${serverId}:`, err);
+            socket.emit("console:error", { message: "No se pudo conectar a la consola" });
+          }
         }
 
         logger.debug(`Socket ${socket.id} suscrito a consola de ${server.name}`);
