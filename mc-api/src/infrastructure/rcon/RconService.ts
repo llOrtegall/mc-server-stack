@@ -21,14 +21,10 @@ export class RconService {
     password: string,
     command: string
   ): Promise<string> {
-    const rcon = new Rcon(host, port, password);
-    try {
-      await rcon.connect();
-      const response = await rcon.command(command);
-      return response;
-    } finally {
-      rcon.disconnect();
-    }
+    // minecraft-rcon v1.x API: new Rcon({host, port, password, timeout}) + .send(cmd)
+    const rcon = new Rcon({ host, port, password, timeout: 5000 });
+    const response = await rcon.send(command);
+    return response;
   }
 
   async getPlayerList(
