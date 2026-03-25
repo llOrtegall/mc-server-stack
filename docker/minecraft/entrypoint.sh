@@ -118,16 +118,25 @@ JVM_FLAGS="-Xms${MC_MEMORY} -Xmx${MC_MEMORY} \
 log "Iniciando Minecraft ${MC_VERSION} con ${MC_MEMORY} de RAM..."
 log "JVM flags: $JVM_FLAGS"
 
-# ── 4. Graceful shutdown ──────────────────────────────────────────────────
-# Al recibir SIGTERM, enviar /stop al servidor en lugar de matar el proceso
+# ── 4. Graceful shutdown via FIFO ────────────────────────────────────────
+# Creamos un pipe con nombre para poder enviar /stop al stdin de Java
+MC_STDIN="/tmp/mc-stdin"
+mkfifo "$MC_STDIN"
+
 cleanup() {
   log "Recibida señal de apagado, enviando /stop al servidor..."
-  if command -v java &>/dev/null && kill -0 "$MC_PID" 2>/dev/null; then
-    # Enviar /stop via stdin del proceso Java
-    echo "/stop" >&"${JAVA_STDIN_FD:-/dev/null}" 2>/dev/null || true
+  if kill -0 "$MC_PID" 2>/dev/null; then
+    echo "/stop" > "$MC_STDIN" 2>/dev/null || true
     # Dar 30 segundos al servidor para guardar el mundo
-    wait "$MC_PID" 2>/dev/null || true
+    local waited=0
+    while kill -0 "$MC_PID" 2>/dev/null && (( waited < 30 )); do
+      sleep 1
+      (( waited++ ))
+    done
+    # Si sigue vivo, matar
+    kill -0 "$MC_PID" 2>/dev/null && kill -9 "$MC_PID" 2>/dev/null || true
   fi
+  rm -f "$MC_STDIN"
   log "Servidor apagado correctamente."
   exit 0
 }
@@ -138,7 +147,8 @@ trap cleanup SIGTERM SIGINT
 cd "$MC_DIR"
 
 # shellcheck disable=SC2086
-exec java $JVM_FLAGS -jar server.jar --nogui &
+# Lanzamos Java leyendo del FIFO como stdin, en background para capturar PID
+java $JVM_FLAGS -jar server.jar --nogui < <(cat "$MC_STDIN") &
 MC_PID=$!
 
 log "Servidor iniciado con PID $MC_PID"
