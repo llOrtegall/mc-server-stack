@@ -46,6 +46,9 @@ export class R2StorageService implements IStorageService {
     const response = await this.client.send(
       new GetObjectCommand({ Bucket: this.bucket, Key: key })
     );
+    if (!response.Body) {
+      throw new Error(`Backup no encontrado en R2: ${key}`);
+    }
     return response.Body as Readable;
   }
 
