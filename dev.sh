@@ -11,6 +11,7 @@
 #   ./dev.sh api      → solo la API (asume DB ya corre)
 #   ./dev.sh panel    → solo el frontend (asume API ya corre)
 #   ./dev.sh mc-build → solo rebuild de la imagen Minecraft
+#   ./dev.sh reset-db → reinicia PostgreSQL dev (borra volumen)
 #   ./dev.sh stop     → detiene todo
 #   ./dev.sh check    → valida prerequisitos del sistema
 # ─────────────────────────────────────────────────────────────────────────────
@@ -124,25 +125,53 @@ check_node_npm() {
   log "npm listo: $(npm --version)"
 }
 
+apply_db_env_defaults() {
+  export POSTGRES_DB="${POSTGRES_DB:-mcpanel}"
+  export POSTGRES_USER="${POSTGRES_USER:-mcadmin}"
+  export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-devpassword}"
+  export POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+  export DATABASE_URL="${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}}"
+}
+
+load_env_dev_optional() {
+  if [ -f "$ROOT_DIR/.env.dev" ]; then
+    set -a
+    source "$ROOT_DIR/.env.dev"
+    set +a
+  fi
+  apply_db_env_defaults
+}
+
+check_db_env_consistency() {
+  local expected_prefix="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/"
+  if [[ "${DATABASE_URL}" != ${expected_prefix}${POSTGRES_DB}* ]]; then
+    warn "DATABASE_URL no coincide con POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB/POSTGRES_PORT."
+    warn "En dev, mantén credenciales alineadas para evitar errores de autenticación."
+  fi
+}
+
 check_system_prereqs() {
   log "Verificando dependencias del sistema..."
   check_linux_runtime
   check_docker
   check_bun
   check_node_npm
+  load_env_dev_optional
+  check_db_env_consistency
   log "Todas las dependencias del sistema listas"
 }
 
 # ── Funciones ────────────────────────────────────────────────────────────────
 
 start_db() {
+  load_env_dev_optional
   check_docker
   log "Levantando PostgreSQL..."
   compose -f docker-compose.dev.yml up -d
 
   log "Esperando a que PostgreSQL esté listo..."
   local attempts=0
-  until compose -f docker-compose.dev.yml exec -T postgres pg_isready -U mcadmin -d mcpanel &>/dev/null; do
+  until compose -f docker-compose.dev.yml exec -T postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" &>/dev/null; do
     sleep 1
     ((attempts++))
     if (( attempts > 30 )); then
@@ -150,7 +179,8 @@ start_db() {
       exit 1
     fi
   done
-  log "PostgreSQL listo en localhost:5432"
+  verify_postgres_credentials
+  log "PostgreSQL listo en localhost:${POSTGRES_PORT}"
 }
 
 build_mc_image() {
@@ -241,6 +271,7 @@ stop_all() {
 }
 
 show_status() {
+  load_env_dev_optional
   info "Estado del entorno de desarrollo:"
   echo ""
 
@@ -253,7 +284,7 @@ show_status() {
 
   # PostgreSQL
   if try_resolve_compose_cmd && compose -f docker-compose.dev.yml ps --status running 2>/dev/null | grep -q postgres; then
-    log "PostgreSQL: corriendo en localhost:5432"
+    log "PostgreSQL: corriendo en localhost:${POSTGRES_PORT}"
   else
     warn "PostgreSQL: detenido"
   fi
@@ -287,6 +318,32 @@ load_env_dev() {
   set -a
   source "$ROOT_DIR/.env.dev"
   set +a
+  apply_db_env_defaults
+}
+
+verify_postgres_credentials() {
+  if ! compose -f docker-compose.dev.yml exec -T \
+    -e PGPASSWORD="$POSTGRES_PASSWORD" \
+    postgres psql -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1;" >/dev/null 2>&1; then
+    err "PostgreSQL levantó, pero falló autenticación con las credenciales de dev."
+    err "Credenciales actuales esperadas:"
+    err "  POSTGRES_USER=$POSTGRES_USER"
+    err "  POSTGRES_DB=$POSTGRES_DB"
+    err "  POSTGRES_PASSWORD=<oculto>"
+    err "Esto suele pasar cuando el volumen postgres-dev-data fue creado con otra contraseña."
+    err "Si estás en modo dev y puedes borrar datos, ejecuta:"
+    err "  ./dev.sh reset-db"
+    exit 1
+  fi
+}
+
+reset_db() {
+  load_env_dev_optional
+  check_docker
+  warn "Reiniciando PostgreSQL dev: se eliminará el volumen postgres-dev-data."
+  compose -f docker-compose.dev.yml down -v --remove-orphans
+  start_db
+  log "PostgreSQL dev reiniciado con credenciales actuales."
 }
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -303,6 +360,9 @@ case "$CMD" in
     ;;
   db)
     start_db
+    ;;
+  reset-db)
+    reset_db
     ;;
   mc-build)
     build_mc_image
@@ -353,12 +413,13 @@ case "$CMD" in
     log "==========================================="
     ;;
   *)
-    echo "Uso: ./dev.sh [all|db|mc-build|api|panel|stop|status|check]"
+    echo "Uso: ./dev.sh [all|db|reset-db|mc-build|api|panel|stop|status|check]"
     echo ""
     echo "Comandos:"
     echo "  all       Levanta todo (por defecto)"
     echo "  check     Valida prerequisitos (Docker, Compose, Bun, Node.js, npm)"
     echo "  db        Solo PostgreSQL"
+    echo "  reset-db  Reinicia PostgreSQL dev (borra datos del volumen)"
     echo "  mc-build  Solo rebuild imagen Minecraft"
     echo "  api       Solo la API (asume DB corriendo)"
     echo "  panel     Solo el frontend (asume API corriendo)"

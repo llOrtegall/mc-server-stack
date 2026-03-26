@@ -8,18 +8,17 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: mc-postgres-dev
     restart: unless-stopped
     environment:
-      POSTGRES_DB: mcpanel
-      POSTGRES_USER: mcadmin
-      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: ${POSTGRES_DB:-mcpanel}
+      POSTGRES_USER: ${POSTGRES_USER:-mcadmin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-dev-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mcadmin -d mcpanel"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mcadmin} -d ${POSTGRES_DB:-mcpanel}"]
       interval: 5s
       timeout: 3s
       retries: 5
