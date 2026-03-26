@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# dev.sh — Levanta el entorno de desarrollo local en WSL (Ubuntu 24)
+# dev.sh — Levanta el entorno de desarrollo local en Ubuntu 24 / WSL2
 #
-# Instala dependencias automaticamente (Bun, Node.js 20, etc.)
-# Docker y Docker Compose deben estar instalados previamente.
+# Este script NO instala Docker, Bun ni Node.js.
+# Esos componentes son prerequisitos del sistema.
 #
 # Uso:
 #   ./dev.sh          → levanta todo (DB + build MC image + API + frontend)
@@ -12,7 +12,7 @@
 #   ./dev.sh panel    → solo el frontend (asume API ya corre)
 #   ./dev.sh mc-build → solo rebuild de la imagen Minecraft
 #   ./dev.sh stop     → detiene todo
-#   ./dev.sh install  → solo instala dependencias del sistema
+#   ./dev.sh check    → valida prerequisitos del sistema
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -32,6 +32,54 @@ info() { echo -e "${CYAN}[dev]${NC} $*"; }
 
 # ── Verificar requisitos del sistema ──────────────────────────────────────────
 
+NODE_MIN_MAJOR=24
+COMPOSE_CMD=()
+
+check_linux_runtime() {
+  if [[ "$(uname -s)" != "Linux" ]]; then
+    err "Este script está pensado para Linux (Ubuntu 24 / WSL2)."
+    err "Ejecuta ./dev.sh desde una shell Linux."
+    exit 1
+  fi
+
+  if [[ -f /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    source /etc/os-release
+    if [[ "${ID:-}" != "ubuntu" ]]; then
+      warn "Distro detectada: ${PRETTY_NAME:-desconocida}. Recomendado: Ubuntu 24.04."
+    elif [[ "${VERSION_ID:-}" != "24.04" ]]; then
+      warn "Versión detectada: Ubuntu ${VERSION_ID:-desconocida}. Recomendado: Ubuntu 24.04."
+    else
+      log "Sistema detectado: Ubuntu 24.04"
+    fi
+  fi
+}
+
+resolve_compose_cmd() {
+  if try_resolve_compose_cmd; then
+    return
+  fi
+  err "No se encontró Docker Compose."
+  err "Instala Docker Compose v2 (docker compose) o docker-compose."
+  exit 1
+}
+
+try_resolve_compose_cmd() {
+  if docker compose version &>/dev/null; then
+    COMPOSE_CMD=("docker" "compose")
+    return 0
+  fi
+  if command -v docker-compose &>/dev/null; then
+    COMPOSE_CMD=("docker-compose")
+    return 0
+  fi
+  return 1
+}
+
+compose() {
+  "${COMPOSE_CMD[@]}" "$@"
+}
+
 check_docker() {
   if ! command -v docker &>/dev/null; then
     err "Docker no está instalado. Instálalo primero:"
@@ -44,42 +92,50 @@ check_docker() {
     err "  o abre Docker Desktop"
     exit 1
   fi
+  resolve_compose_cmd
+  log "Docker listo: $(docker --version)"
 }
 
-install_bun() {
-  if command -v bun &>/dev/null; then
-    log "Bun ya instalado: $(bun --version)"
-    return
+check_bun() {
+  if ! command -v bun &>/dev/null; then
+    err "Bun no está instalado. Instálalo y vuelve a ejecutar."
+    err "  https://bun.sh/docs/installation"
+    exit 1
   fi
-  warn "Bun no encontrado, instalando..."
-  curl -fsSL https://bun.sh/install | bash
-  # Cargar bun en la sesion actual
-  export BUN_INSTALL="$HOME/.bun"
-  export PATH="$BUN_INSTALL/bin:$PATH"
-  log "Bun instalado: $(bun --version)"
+  log "Bun listo: $(bun --version)"
 }
 
-install_node() {
-  if command -v node &>/dev/null; then
-    local node_version
-    node_version=$(node --version | sed 's/v//' | cut -d. -f1)
-    if (( node_version >= 24 )); then
-      log "Node.js ya instalado: $(node --version)"
-      return
-    fi
-    warn "Node.js $(node --version) detectado, se necesita v24+"
+check_node_npm() {
+  if ! command -v node &>/dev/null; then
+    err "Node.js no está instalado. Requerido: v${NODE_MIN_MAJOR}+."
+    exit 1
   fi
-  warn "Instalando Node.js 24 via NodeSource..."
-  curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
-  sudo apt-get install -y nodejs
-  log "Node.js instalado: $(node --version)"
+  if ! command -v npm &>/dev/null; then
+    err "npm no está disponible. Instala Node.js completo (incluye npm)."
+    exit 1
+  fi
+
+  local node_major
+  node_major="$(node --version | sed 's/^v//' | cut -d. -f1)"
+  if ! [[ "$node_major" =~ ^[0-9]+$ ]]; then
+    err "No se pudo interpretar la versión de Node.js: $(node --version)"
+    exit 1
+  fi
+  if (( node_major < NODE_MIN_MAJOR )); then
+    err "Node.js $(node --version) detectado, se requiere v${NODE_MIN_MAJOR}+."
+    exit 1
+  fi
+
+  log "Node.js listo: $(node --version)"
+  log "npm listo: $(npm --version)"
 }
 
-install_system_deps() {
+check_system_prereqs() {
   log "Verificando dependencias del sistema..."
+  check_linux_runtime
   check_docker
-  install_bun
-  install_node
+  check_bun
+  check_node_npm
   log "Todas las dependencias del sistema listas"
 }
 
@@ -88,11 +144,11 @@ install_system_deps() {
 start_db() {
   check_docker
   log "Levantando PostgreSQL..."
-  docker compose -f docker-compose.dev.yml up -d
+  compose -f docker-compose.dev.yml up -d
 
   log "Esperando a que PostgreSQL esté listo..."
   local attempts=0
-  until docker compose -f docker-compose.dev.yml exec -T postgres pg_isready -U mcadmin -d mcpanel &>/dev/null; do
+  until compose -f docker-compose.dev.yml exec -T postgres pg_isready -U mcadmin -d mcpanel &>/dev/null; do
     sleep 1
     ((attempts++))
     if (( attempts > 30 )); then
@@ -119,9 +175,7 @@ install_and_migrate_api() {
   bun install
 
   log "Ejecutando migraciones..."
-  set -a
-  source "$ROOT_DIR/.env.dev"
-  set +a
+  load_env_dev
   bun src/infrastructure/persistence/migrate.ts
   cd "$ROOT_DIR"
 }
@@ -135,9 +189,7 @@ start_api() {
     bun install
   fi
 
-  set -a
-  source "$ROOT_DIR/.env.dev"
-  set +a
+  load_env_dev
 
   log "Iniciando mc-api en http://localhost:3001"
   bun --watch src/index.ts
@@ -170,18 +222,21 @@ start_panel() {
 stop_all() {
   log "Deteniendo servicios..."
 
-  # PostgreSQL
-  if docker compose -f docker-compose.dev.yml ps --status running 2>/dev/null | grep -q postgres; then
-    docker compose -f docker-compose.dev.yml down
-    log "PostgreSQL detenido"
-  fi
+  if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
+    if try_resolve_compose_cmd && compose -f docker-compose.dev.yml ps --status running 2>/dev/null | grep -q postgres; then
+      compose -f docker-compose.dev.yml down
+      log "PostgreSQL detenido"
+    fi
 
-  # Contenedores Minecraft
-  local mc_containers
-  mc_containers=$(docker ps --filter "label=mc-panel.managed=true" -q 2>/dev/null || true)
-  if [ -n "$mc_containers" ]; then
-    echo "$mc_containers" | xargs docker stop 2>/dev/null || true
-    log "Contenedores Minecraft detenidos"
+    # Contenedores Minecraft
+    local mc_containers
+    mc_containers=$(docker ps --filter "label=mc-panel.managed=true" -q 2>/dev/null || true)
+    if [ -n "$mc_containers" ]; then
+      echo "$mc_containers" | xargs docker stop 2>/dev/null || true
+      log "Contenedores Minecraft detenidos"
+    fi
+  else
+    warn "Docker no disponible; se omite parada de contenedores."
   fi
 
   # Matar procesos de bun/next si siguen corriendo
@@ -196,14 +251,14 @@ show_status() {
   echo ""
 
   # Docker
-  if docker info &>/dev/null 2>&1; then
+  if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
     log "Docker: corriendo"
   else
     err "Docker: no disponible"
   fi
 
   # PostgreSQL
-  if docker compose -f docker-compose.dev.yml ps --status running 2>/dev/null | grep -q postgres; then
+  if try_resolve_compose_cmd && compose -f docker-compose.dev.yml ps --status running 2>/dev/null | grep -q postgres; then
     log "PostgreSQL: corriendo en localhost:5432"
   else
     warn "PostgreSQL: detenido"
@@ -229,13 +284,28 @@ show_status() {
   fi
 }
 
+load_env_dev() {
+  if [ ! -f "$ROOT_DIR/.env.dev" ]; then
+    err "No existe $ROOT_DIR/.env.dev"
+    err "Copia .env.example a .env.dev y completa las variables necesarias."
+    exit 1
+  fi
+  set -a
+  source "$ROOT_DIR/.env.dev"
+  set +a
+}
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 CMD="${1:-all}"
 
 case "$CMD" in
+  check)
+    check_system_prereqs
+    ;;
   install)
-    install_system_deps
+    warn "El comando 'install' está deprecado: ya no se instalan prerequisitos automáticamente."
+    check_system_prereqs
     ;;
   db)
     start_db
@@ -256,8 +326,8 @@ case "$CMD" in
     show_status
     ;;
   all)
-    # Instalar dependencias del sistema si faltan
-    install_system_deps
+    # Validar prerequisitos del sistema
+    check_system_prereqs
 
     # Crear directorios de datos
     mkdir -p data/servers data/backups logs
@@ -289,11 +359,11 @@ case "$CMD" in
     log "==========================================="
     ;;
   *)
-    echo "Uso: ./dev.sh [all|db|mc-build|api|panel|stop|status|install]"
+    echo "Uso: ./dev.sh [all|db|mc-build|api|panel|stop|status|check]"
     echo ""
     echo "Comandos:"
     echo "  all       Levanta todo (por defecto)"
-    echo "  install   Solo instala Bun + Node.js"
+    echo "  check     Valida prerequisitos (Docker, Compose, Bun, Node.js, npm)"
     echo "  db        Solo PostgreSQL"
     echo "  mc-build  Solo rebuild imagen Minecraft"
     echo "  api       Solo la API (asume DB corriendo)"
