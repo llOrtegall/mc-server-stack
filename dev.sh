@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# dev.sh — Levanta el entorno de desarrollo local en Ubuntu 24 / WSL2
+# dev.sh — Levanta el entorno de desarrollo local en Linux (WSL2 o VPS)
 #
 # Este script NO instala Docker, Bun ni Node.js.
 # Esos componentes son prerequisitos del sistema.
@@ -37,21 +37,15 @@ COMPOSE_CMD=()
 
 check_linux_runtime() {
   if [[ "$(uname -s)" != "Linux" ]]; then
-    err "Este script está pensado para Linux (Ubuntu 24 / WSL2)."
+    err "Este script está pensado para Linux (WSL2 o VPS)."
     err "Ejecuta ./dev.sh desde una shell Linux."
     exit 1
   fi
 
-  if [[ -f /etc/os-release ]]; then
-    # shellcheck disable=SC1091
-    source /etc/os-release
-    if [[ "${ID:-}" != "ubuntu" ]]; then
-      warn "Distro detectada: ${PRETTY_NAME:-desconocida}. Recomendado: Ubuntu 24.04."
-    elif [[ "${VERSION_ID:-}" != "24.04" ]]; then
-      warn "Versión detectada: Ubuntu ${VERSION_ID:-desconocida}. Recomendado: Ubuntu 24.04."
-    else
-      log "Sistema detectado: Ubuntu 24.04"
-    fi
+  if grep -qi microsoft /proc/version 2>/dev/null; then
+    log "Sistema detectado: Linux sobre WSL"
+  else
+    log "Sistema detectado: Linux"
   fi
 }
 
