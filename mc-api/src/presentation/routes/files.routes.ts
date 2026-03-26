@@ -1,12 +1,15 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { readdir, readFile, writeFile, mkdir, unlink, rename } from "fs/promises";
-import { join, normalize, relative } from "path";
+import { join, normalize, relative, basename } from "path";
+import { tmpdir } from "os";
 import multer from "multer";
 import { createReadStream } from "fs";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import type { IServerRepository } from "../../domain/server/IServerRepository.js";
 
-const upload = multer({ dest: "/tmp/mc-uploads/" });
+type IdParams = { id: string };
+
+const upload = multer({ dest: join(tmpdir(), "mc-uploads") });
 
 export function createFilesRouter(serverRepo: IServerRepository): Router {
   const router = Router({ mergeParams: true });
@@ -22,7 +25,7 @@ export function createFilesRouter(serverRepo: IServerRepository): Router {
   }
 
   // GET /servers/:id/files?path=/some/dir
-  router.get("/", authMiddleware, async (req, res, next) => {
+  router.get("/", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await serverRepo.findById(req.params.id);
       if (!server) { res.status(404).json({ error: "Servidor no encontrado" }); return; }
@@ -43,7 +46,7 @@ export function createFilesRouter(serverRepo: IServerRepository): Router {
   });
 
   // GET /servers/:id/files/content?path=/server.properties
-  router.get("/content", authMiddleware, async (req, res, next) => {
+  router.get("/content", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await serverRepo.findById(req.params.id);
       if (!server) { res.status(404).json({ error: "Servidor no encontrado" }); return; }
@@ -57,7 +60,7 @@ export function createFilesRouter(serverRepo: IServerRepository): Router {
   });
 
   // PUT /servers/:id/files/content
-  router.put("/content", authMiddleware, async (req, res, next) => {
+  router.put("/content", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await serverRepo.findById(req.params.id);
       if (!server) { res.status(404).json({ error: "Servidor no encontrado" }); return; }
@@ -72,7 +75,7 @@ export function createFilesRouter(serverRepo: IServerRepository): Router {
   });
 
   // POST /servers/:id/files/mkdir
-  router.post("/mkdir", authMiddleware, async (req, res, next) => {
+  router.post("/mkdir", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await serverRepo.findById(req.params.id);
       if (!server) { res.status(404).json({ error: "Servidor no encontrado" }); return; }
@@ -86,7 +89,7 @@ export function createFilesRouter(serverRepo: IServerRepository): Router {
   });
 
   // DELETE /servers/:id/files
-  router.delete("/", authMiddleware, async (req, res, next) => {
+  router.delete("/", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await serverRepo.findById(req.params.id);
       if (!server) { res.status(404).json({ error: "Servidor no encontrado" }); return; }
@@ -100,7 +103,7 @@ export function createFilesRouter(serverRepo: IServerRepository): Router {
   });
 
   // POST /servers/:id/files/rename
-  router.post("/rename", authMiddleware, async (req, res, next) => {
+  router.post("/rename", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await serverRepo.findById(req.params.id);
       if (!server) { res.status(404).json({ error: "Servidor no encontrado" }); return; }
@@ -116,7 +119,7 @@ export function createFilesRouter(serverRepo: IServerRepository): Router {
   });
 
   // POST /servers/:id/files/upload
-  router.post("/upload", authMiddleware, upload.single("file"), async (req, res, next) => {
+  router.post("/upload", authMiddleware, upload.single("file"), async (req: Request<IdParams>, res, next) => {
     try {
       const server = await serverRepo.findById(req.params.id);
       if (!server || !req.file) {
@@ -128,8 +131,7 @@ export function createFilesRouter(serverRepo: IServerRepository): Router {
         server.dataPath,
         join((req.body.path as string) ?? "/", req.file.originalname)
       );
-      const { rename: fsRename } = await import("fs/promises");
-      await fsRename(req.file.path, destPath);
+      await rename(req.file.path, destPath);
       res.json({ ok: true, path: destPath });
     } catch (err) {
       next(err);
@@ -137,13 +139,13 @@ export function createFilesRouter(serverRepo: IServerRepository): Router {
   });
 
   // GET /servers/:id/files/download?path=/world/...
-  router.get("/download", authMiddleware, async (req, res, next) => {
+  router.get("/download", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await serverRepo.findById(req.params.id);
       if (!server) { res.status(404).json({ error: "Servidor no encontrado" }); return; }
 
       const safePath = resolveSafePath(server.dataPath, (req.query.path as string) ?? "");
-      const filename = safePath.split("/").pop() ?? "file";
+      const filename = basename(safePath);
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
       createReadStream(safePath).pipe(res);
     } catch (err) {
