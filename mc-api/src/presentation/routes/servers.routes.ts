@@ -1,6 +1,8 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { z } from "zod";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
+
+type IdParams = { id: string };
 import type { CreateServerUseCase } from "../../application/server/CreateServerUseCase.js";
 import type { StartServerUseCase } from "../../application/server/StartServerUseCase.js";
 import type { StopServerUseCase } from "../../application/server/StopServerUseCase.js";
@@ -67,7 +69,7 @@ export function createServersRouter(deps: {
   });
 
   // GET /servers/:id
-  router.get("/:id", authMiddleware, async (req, res, next) => {
+  router.get("/:id", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await deps.serverRepo.findById(req.params.id);
       if (!server) {
@@ -81,7 +83,7 @@ export function createServersRouter(deps: {
   });
 
   // PUT /servers/:id
-  router.put("/:id", authMiddleware, async (req, res, next) => {
+  router.put("/:id", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await deps.serverRepo.findById(req.params.id);
       if (!server) {
@@ -98,7 +100,7 @@ export function createServersRouter(deps: {
   });
 
   // DELETE /servers/:id
-  router.delete("/:id", authMiddleware, async (req, res, next) => {
+  router.delete("/:id", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       await deps.deleteServer.execute(req.params.id);
       res.status(204).send();
@@ -108,7 +110,7 @@ export function createServersRouter(deps: {
   });
 
   // POST /servers/:id/start
-  router.post("/:id/start", authMiddleware, async (req, res, next) => {
+  router.post("/:id/start", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       await deps.startServer.execute(req.params.id);
       res.json({ ok: true });
@@ -118,7 +120,7 @@ export function createServersRouter(deps: {
   });
 
   // POST /servers/:id/stop
-  router.post("/:id/stop", authMiddleware, async (req, res, next) => {
+  router.post("/:id/stop", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       await deps.stopServer.execute(req.params.id);
       res.json({ ok: true });
@@ -128,7 +130,7 @@ export function createServersRouter(deps: {
   });
 
   // POST /servers/:id/restart
-  router.post("/:id/restart", authMiddleware, async (req, res, next) => {
+  router.post("/:id/restart", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       await deps.stopServer.execute(req.params.id);
       await deps.startServer.execute(req.params.id);
@@ -139,7 +141,7 @@ export function createServersRouter(deps: {
   });
 
   // GET /servers/:id/metrics
-  router.get("/:id/metrics", authMiddleware, async (req, res, next) => {
+  router.get("/:id/metrics", authMiddleware, async (req: Request<IdParams>, res, next) => {
     try {
       const server = await deps.serverRepo.findById(req.params.id);
       if (!server?.containerId) {
