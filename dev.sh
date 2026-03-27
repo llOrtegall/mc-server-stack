@@ -10,7 +10,7 @@
 #   ./dev.sh db       → solo PostgreSQL
 #   ./dev.sh api      → solo la API (asume DB ya corre)
 #   ./dev.sh panel    → solo el frontend (asume API ya corre)
-#   ./dev.sh mc-build → solo rebuild de la imagen Minecraft
+#   ./dev.sh mc-build → buildea todas las imágenes Minecraft soportadas
 #   ./dev.sh reset-db → reinicia PostgreSQL dev (borra volumen)
 #   ./dev.sh stop     → detiene todo
 #   ./dev.sh check    → valida prerequisitos del sistema
@@ -183,14 +183,24 @@ start_db() {
   log "PostgreSQL listo en localhost:${POSTGRES_PORT}"
 }
 
+MC_VERSIONS=("26.1" "1.21.11" "1.21.10" "1.21.9")
+
 build_mc_image() {
   check_docker
-  log "Construyendo imagen Docker de Minecraft..."
-  docker build \
-    --build-arg MC_VERSION=1.21 \
-    -t mc-server:latest \
-    ./docker/minecraft/
-  log "Imagen mc-server:latest construida"
+  local force="${1:-}"
+  for version in "${MC_VERSIONS[@]}"; do
+    if [[ "$force" != "--force" ]] && docker image inspect "mc-server:${version}" &>/dev/null; then
+      log "Imagen mc-server:${version} ya existe, saltando (usa mc-build --force para forzar)"
+      continue
+    fi
+    log "Construyendo mc-server:${version}..."
+    docker build \
+      --build-arg MC_VERSION="${version}" \
+      -t "mc-server:${version}" \
+      ./docker/minecraft/
+    log "mc-server:${version} lista"
+  done
+  log "Todas las imágenes Minecraft construidas"
 }
 
 install_and_migrate_api() {
@@ -365,7 +375,7 @@ case "$CMD" in
     reset_db
     ;;
   mc-build)
-    build_mc_image
+    build_mc_image "${2:-}"
     ;;
   api)
     start_api
@@ -420,7 +430,7 @@ case "$CMD" in
     echo "  check     Valida prerequisitos (Docker, Compose, Bun, Node.js, npm)"
     echo "  db        Solo PostgreSQL"
     echo "  reset-db  Reinicia PostgreSQL dev (borra datos del volumen)"
-    echo "  mc-build  Solo rebuild imagen Minecraft"
+    echo "  mc-build  Buildea imágenes Minecraft (agrega --force para reconstruir)"
     echo "  api       Solo la API (asume DB corriendo)"
     echo "  panel     Solo el frontend (asume API corriendo)"
     echo "  status    Muestra estado de los servicios"
