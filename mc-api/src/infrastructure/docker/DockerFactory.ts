@@ -2,8 +2,8 @@ import { resolve } from "path";
 import type { ContainerCreateOptions } from "dockerode";
 import type { Server } from "../../domain/server/Server.entity.js";
 
-// La imagen custom de Minecraft se build localmente y se etiqueta mc-server
-const MC_IMAGE = "mc-server:latest";
+// Versiones soportadas — una imagen pre-buildeada por versión
+export const SUPPORTED_MC_VERSIONS = ['26.1', '1.21.11', '1.21.10', '1.21.9'] as const;
 
 /**
  * Factory Pattern — genera la configuración de contenedor Docker para un servidor Minecraft.
@@ -17,7 +17,7 @@ export class DockerFactory {
 
     return {
       name: containerName,
-      Image: MC_IMAGE,
+      Image: `mc-server:${server.version}`,
       Env: [
         `MC_VERSION=${server.version}`,
         `MC_MEMORY=${server.memoryMb}M`,
