@@ -4,7 +4,7 @@
   "description": "MC Panel Backend — Express + TypeScript + Clean Architecture",
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "bun --watch ./src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "start": "bun dist/index.js",
     "db:migrate": "bun src/infrastructure/persistence/migrate.ts"
@@ -35,17 +35,19 @@
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
-    "typescript": "^5.6.0",
-    "@types/pg": "^8.11.10",
-    "@types/jsonwebtoken": "^9.0.7",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node-cron": "^3.0.11",
-    "@types/node": "^22.0.0",
-    "@types/cors": "^2.8.17",
-    "@types/multer": "^1.4.12",
     "@types/archiver": "^6.0.2",
-    "@types/uuid": "^10.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
     "@types/dockerode": "^3.3.31",
-    "@types/cookie-parser": "^1.4.7"
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.0.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.11.10",
+    "@types/uuid": "^10.0.0",
+    "morgan": "^1.10.1",
+    "typescript": "^5.6.0"
   }
 }
