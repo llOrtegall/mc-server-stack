@@ -6,7 +6,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 FROM alpine:3.19 AS downloader
 
-ARG MC_VERSION=1.21
+ARG MC_VERSION=26.1
 
 RUN apk add --no-cache curl jq
 
@@ -28,7 +28,7 @@ RUN MANIFEST_URL="https://piston-meta.mojang.com/mc/game/version_manifest_v2.jso
 # Soporta 1.16 (Java 16) y 1.17+ (Java 21).
 # En producción se usa una sola imagen por servidor con la versión fijada.
 # ─────────────────────────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
 # Metadatos
 LABEL org.opencontainers.image.title="mc-server" \
@@ -41,8 +41,8 @@ RUN apk add --no-cache \
     curl \
     tini
 
-# Usuario no-root para seguridad
-RUN addgroup -S minecraft && adduser -S -G minecraft minecraft
+# Usuario no-root — UID 1000 para coincidir con usuario del host en bind mounts
+RUN addgroup -S -g 1000 minecraft && adduser -S -G minecraft -u 1000 minecraft
 
 WORKDIR /minecraft
 
@@ -51,11 +51,13 @@ COPY --from=downloader --chown=minecraft:minecraft /server.jar ./server.jar
 
 # Script de inicio
 COPY --chown=minecraft:minecraft entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh && \
+    mkdir -p /minecraft/logs /minecraft/world && \
+    chown -R minecraft:minecraft /minecraft
 
 # Variables de entorno con defaults seguros
 ENV MC_MEMORY=1024M \
-    MC_VERSION=1.21 \
+    MC_VERSION=26.1 \
     SERVER_PORT=25565 \
     RCON_PORT=25575 \
     RCON_PASSWORD=changeme \
