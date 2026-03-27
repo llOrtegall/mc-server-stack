@@ -121,6 +121,7 @@ log "JVM flags: $JVM_FLAGS"
 # ── 4. Graceful shutdown via FIFO ────────────────────────────────────────
 # Creamos un pipe con nombre para poder enviar /stop al stdin de Java
 MC_STDIN="/tmp/mc-stdin"
+rm -f "$MC_STDIN"
 mkfifo "$MC_STDIN"
 
 cleanup() {
