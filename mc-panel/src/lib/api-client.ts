@@ -52,6 +52,7 @@ export const auth = {
 
 // ── Servers ───────────────────────────────────────────────────────────────────
 export const servers = {
+  versions: () => request<string[]>("/servers/versions"),
   list: () => request<MCServer[]>("/servers"),
   get: (id: string) => request<MCServer>(`/servers/${id}`),
   create: (data: Partial<MCServer>) =>
