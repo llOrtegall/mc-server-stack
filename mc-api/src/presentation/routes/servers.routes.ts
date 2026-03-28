@@ -9,13 +9,11 @@ import type { StopServerUseCase } from "../../application/server/StopServerUseCa
 import type { DeleteServerUseCase } from "../../application/server/DeleteServerUseCase.js";
 import type { IServerRepository } from "../../domain/server/IServerRepository.js";
 import type { DockerService } from "../../infrastructure/docker/DockerService.js";
+import { SUPPORTED_MC_VERSIONS } from "../../infrastructure/docker/DockerFactory.js";
 
 const CreateServerSchema = z.object({
   name: z.string().min(1).max(50),
-  version: z.enum([
-    "1.16.5", "1.17.1", "1.18.2", "1.19.4",
-    "1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.4",
-  ]),
+  version: z.enum(SUPPORTED_MC_VERSIONS),
   port: z.number().int().min(25500).max(25600),
   memoryMb: z.number().int().min(512).max(4096).optional(),
   maxPlayers: z.number().int().min(1).max(100).optional(),
@@ -46,6 +44,11 @@ export function createServersRouter(deps: {
   deleteServer: DeleteServerUseCase;
 }): Router {
   const router = Router();
+
+  // GET /servers/versions
+  router.get("/versions", authMiddleware, (_req, res) => {
+    res.json(SUPPORTED_MC_VERSIONS);
+  });
 
   // GET /servers
   router.get("/", authMiddleware, async (_req, res, next) => {
