@@ -1,4 +1,4 @@
-import { Rcon } from "minecraft-rcon";
+import { Rcon } from "minecraft-rcon/rcon.js";
 import { logger } from "../logger.js";
 
 export interface PlayerListResult {
