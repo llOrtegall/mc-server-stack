@@ -1,14 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { servers as serversApi } from "@/lib/api-client";
-
-const VERSIONS = [
-  "1.21.4", "1.21.1", "1.21", "1.20.6", "1.20.4",
-  "1.19.4", "1.18.2", "1.17.1", "1.16.5",
-];
 
 interface Props {
   onClose: () => void;
@@ -16,10 +11,11 @@ interface Props {
 }
 
 export function CreateServerModal({ onClose, onCreated }: Props) {
+  const [versions, setVersions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    version: "1.21.4",
+    version: "",
     port: 25565,
     memoryMb: 1024,
     maxPlayers: 20,
@@ -29,6 +25,13 @@ export function CreateServerModal({ onClose, onCreated }: Props) {
     onlineMode: true,
     autoShutdownEnabled: true,
   });
+
+  useEffect(() => {
+    serversApi.versions().then((v) => {
+      setVersions(v);
+      setForm((f) => ({ ...f, version: v[0] ?? "" }));
+    }).catch(() => toast.error("No se pudieron cargar las versiones"));
+  }, []);
 
   const set = (key: string, value: unknown) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -79,12 +82,14 @@ export function CreateServerModal({ onClose, onCreated }: Props) {
               <select
                 value={form.version}
                 onChange={(e) => set("version", e.target.value)}
+                disabled={versions.length === 0}
                 className={inputClass}
               >
-                {VERSIONS.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
+                {versions.length === 0 && (
+                  <option value="">Cargando...</option>
+                )}
+                {versions.map((v) => (
+                  <option key={v} value={v}>{v}</option>
                 ))}
               </select>
             </Field>
