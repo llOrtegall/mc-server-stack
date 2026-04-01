@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: mcstack
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: mcstack
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ortega
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mcstack"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ghcr.io/llortegall/mc-server-stack-backend:latest
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://mcstack:${POSTGRES_PASSWORD}@postgres:5432/mcstack
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      DOCKER_SOCKET: /var/run/docker.sock
+      MC_DATA_PATH: /data/mc-servers
+      R2_ENDPOINT: ${R2_ENDPOINT}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET: ${R2_BUCKET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /data/mc-servers:/data/mc-servers
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ortega
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/llortegall/mc-server-stack-frontend:latest
+    depends_on:
+      - backend
+    networks:
+      - ortega
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  ortega:
+    external: true
