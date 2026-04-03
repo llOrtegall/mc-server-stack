@@ -15,6 +15,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set lowercase owner
+        run: echo "OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -30,7 +33,7 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/mc-server-stack-backend:latest
+          tags: ghcr.io/${{ env.OWNER }}/mc-server-stack-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -39,7 +42,7 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/mc-server-stack-frontend:latest
+          tags: ghcr.io/${{ env.OWNER }}/mc-server-stack-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -61,7 +64,7 @@ jobs:
           script: |
             mkdir -p /data/mc-servers
             cd /opt/mc-server-stack
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ env.OWNER }} --password-stdin
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune -f
