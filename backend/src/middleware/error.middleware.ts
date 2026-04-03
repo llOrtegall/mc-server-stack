@@ -1,12 +1,12 @@
-import type { NextFunction, Request, Response } from 'express'
+import type { NextFunction, Request, Response } from 'express';
 
 export class AppError extends Error {
   constructor(
     public statusCode: number,
     message: string,
   ) {
-    super(message)
-    this.name = 'AppError'
+    super(message);
+    this.name = 'AppError';
   }
 }
 
@@ -17,10 +17,10 @@ export function errorMiddleware(
   _next: NextFunction,
 ): void {
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({ error: err.message })
-    return
+    res.status(err.statusCode).json({ error: err.message });
+    return;
   }
 
-  console.error('[error]', err)
-  res.status(500).json({ error: 'Internal server error' })
+  console.error('[error]', err);
+  res.status(500).json({ error: 'Internal server error' });
 }

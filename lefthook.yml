@@ -1,0 +1,16 @@
+pre-commit:
+  parallel: true
+  commands:
+    biome-format:
+      glob: "**/*.{ts,tsx,js,jsx,json}"
+      run: bunx biome format --write {staged_files}
+      stage_fixed: true
+    biome-lint:
+      glob: "**/*.{ts,tsx,js,jsx,json}"
+      run: bunx biome lint --write {staged_files}
+      stage_fixed: true
+
+pre-push:
+  commands:
+    backend-tests:
+      run: cd backend && bun test
