@@ -12,7 +12,7 @@ import { registerClient, startLogStream } from './console/console.service.js';
 import { migrate, pool } from './db/index.js';
 import { authMiddleware } from './middleware/auth.middleware.js';
 import { errorMiddleware } from './middleware/error.middleware.js';
-import { serversRouter } from './servers/servers.router.js';
+import { serverRouter } from './modules/server/interface/server.router.js';
 import { startWatchdog } from './watchdog/watchdog.service.js';
 
 const app = express();
@@ -22,7 +22,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRouter);
-app.use('/api/servers', authMiddleware, serversRouter);
+app.use('/api/servers', authMiddleware, serverRouter);
 app.use('/api/servers/:id/console', authMiddleware, consoleRouter);
 app.use('/api/servers/:id/backups', authMiddleware, backupsRouter);
 
