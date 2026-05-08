@@ -3,8 +3,6 @@ import cors from 'cors';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { WebSocketServer } from 'ws';
-import { authRouter } from './auth/auth.router.js';
-import { createAdminIfNone } from './auth/auth.service.js';
 import { backupsRouter } from './backups/backups.router.js';
 import { config } from './config.js';
 import { consoleRouter } from './console/console.router.js';
@@ -12,6 +10,8 @@ import { registerClient, startLogStream } from './console/console.service.js';
 import { migrate, pool } from './db/index.js';
 import { authMiddleware } from './middleware/auth.middleware.js';
 import { errorMiddleware } from './middleware/error.middleware.js';
+import { authFactory } from './modules/auth/application/factory.js';
+import { authRouter } from './modules/auth/interface/auth.router.js';
 import { serverRouter } from './modules/server/interface/server.router.js';
 import { startWatchdog } from './watchdog/watchdog.service.js';
 
@@ -82,7 +82,7 @@ async function main() {
 
   const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@minecraft.local';
   const adminPassword = process.env.ADMIN_PASSWORD ?? 'changeme123';
-  await createAdminIfNone(adminEmail, adminPassword);
+  await authFactory.createAdminIfNone(adminEmail, adminPassword);
   startWatchdog();
 
   server.listen(config.port, () => {
