@@ -3,7 +3,6 @@ import cors from 'cors';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { WebSocketServer } from 'ws';
-import { backupsRouter } from './backups/backups.router.js';
 import { config } from './config.js';
 import { consoleRouter } from './console/console.router.js';
 import { registerClient, startLogStream } from './console/console.service.js';
@@ -12,6 +11,7 @@ import { authMiddleware } from './middleware/auth.middleware.js';
 import { errorMiddleware } from './middleware/error.middleware.js';
 import { authFactory } from './modules/auth/application/factory.js';
 import { authRouter } from './modules/auth/interface/auth.router.js';
+import { backupRouter } from './modules/backup/interface/backup.router.js';
 import { serverRouter } from './modules/server/interface/server.router.js';
 import { startWatchdog } from './watchdog/watchdog.service.js';
 
@@ -24,7 +24,7 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/servers', authMiddleware, serverRouter);
 app.use('/api/servers/:id/console', authMiddleware, consoleRouter);
-app.use('/api/servers/:id/backups', authMiddleware, backupsRouter);
+app.use('/api/servers/:id/backups', authMiddleware, backupRouter);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
