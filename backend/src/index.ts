@@ -4,14 +4,17 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { WebSocketServer } from 'ws';
 import { config } from './config.js';
-import { consoleRouter } from './console/console.router.js';
-import { registerClient, startLogStream } from './console/console.service.js';
 import { migrate, pool } from './db/index.js';
 import { authMiddleware } from './middleware/auth.middleware.js';
 import { errorMiddleware } from './middleware/error.middleware.js';
 import { authFactory } from './modules/auth/application/factory.js';
 import { authRouter } from './modules/auth/interface/auth.router.js';
 import { backupRouter } from './modules/backup/interface/backup.router.js';
+import {
+  registerClient,
+  startLogStream,
+} from './modules/console/infrastructure/WsLogStream.js';
+import { consoleRouter } from './modules/console/interface/console.router.js';
 import { serverRouter } from './modules/server/interface/server.router.js';
 import { startWatchdog } from './watchdog/watchdog.service.js';
 
