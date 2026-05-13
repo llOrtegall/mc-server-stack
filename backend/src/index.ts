@@ -4,7 +4,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { WebSocketServer } from 'ws';
 import { config } from './config.js';
-import { migrate, pool } from './db/index.js';
+import { migrate } from './db/index.js';
 import { authMiddleware } from './middleware/auth.middleware.js';
 import { errorMiddleware } from './middleware/error.middleware.js';
 import { authFactory } from './modules/auth/application/factory.js';
@@ -12,7 +12,7 @@ import { authRouter } from './modules/auth/interface/auth.router.js';
 import { backupRouter } from './modules/backup/interface/backup.router.js';
 import {
   registerClient,
-  startLogStream,
+  streamIfRunning,
 } from './modules/console/infrastructure/WsLogStream.js';
 import { consoleRouter } from './modules/console/interface/console.router.js';
 import { serverRouter } from './modules/server/interface/server.router.js';
@@ -64,19 +64,11 @@ server.on('upgrade', async (request, socket, head) => {
 
   const serverId = match[1];
 
-  wss.handleUpgrade(request, socket, head, async (ws) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
     registerClient(serverId, ws);
-
-    const result = await pool.query<{ container_id: string; status: string }>(
-      'SELECT container_id, status FROM servers WHERE id = $1',
-      [serverId],
+    streamIfRunning(serverId).catch((err) =>
+      console.error('[ws] log stream error', err),
     );
-    const srv = result.rows[0];
-    if (srv?.container_id && srv.status === 'running') {
-      startLogStream(serverId, srv.container_id).catch((err) =>
-        console.error('[ws] log stream error', err),
-      );
-    }
   });
 });
 

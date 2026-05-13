@@ -1,6 +1,9 @@
 import { PassThrough } from 'node:stream';
 import type { WebSocket } from 'ws';
 import * as dockerService from '../../../docker/docker.service.js';
+import { PostgresConsoleServerRepository } from './PostgresConsoleServerRepository.js';
+
+const consoleServerRepository = new PostgresConsoleServerRepository();
 
 /**
  * Live console plumbing: holds the per-server set of WebSocket clients and pipes
@@ -44,4 +47,15 @@ export async function startLogStream(
     stdout.destroy();
     stderr.destroy();
   });
+}
+
+/**
+ * Starts the live log stream for a server only when it is running. Resolves the
+ * server through the console read model so no raw SQL leaks out of the repo.
+ */
+export async function streamIfRunning(serverId: string): Promise<void> {
+  const server = await consoleServerRepository.findById(serverId);
+  if (server?.containerId && server.status === 'running') {
+    await startLogStream(serverId, server.containerId);
+  }
 }
