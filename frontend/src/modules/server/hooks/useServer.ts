@@ -1,0 +1,76 @@
+import { useCallback, useEffect, useState } from 'react';
+import { serverFactory } from '../application/factory.js';
+import type { Server } from '../domain/Server.js';
+
+const POLL_INTERVAL_MS = 3000;
+
+export type ServerAction = 'start' | 'stop' | 'restart';
+
+export function useServer(id: string) {
+  const [server, setServer] = useState<Server | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState<
+    ServerAction | 'delete' | null
+  >(null);
+
+  const fetchServer = useCallback(async () => {
+    if (!id) return;
+    try {
+      setServer(await serverFactory.getServer(id));
+      setError('');
+    } catch (err) {
+      if (!server) {
+        setError(
+          err instanceof Error ? err.message : 'Error al cargar servidor',
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [id, server]);
+
+  useEffect(() => {
+    fetchServer();
+  }, [fetchServer]);
+
+  // Poll while the server is in a transitional state.
+  useEffect(() => {
+    if (!server?.getStatus().isTransitioning()) return;
+    const interval = setInterval(fetchServer, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [server, fetchServer]);
+
+  const runAction = useCallback(
+    async (action: ServerAction) => {
+      if (!id) return;
+      setActionLoading(action);
+      try {
+        if (action === 'start') await serverFactory.startServer(id);
+        else if (action === 'stop') await serverFactory.stopServer(id);
+        else await serverFactory.restartServer(id);
+        await fetchServer();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error en accion');
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [id, fetchServer],
+  );
+
+  const removeServer = useCallback(async (): Promise<boolean> => {
+    if (!id) return false;
+    setActionLoading('delete');
+    try {
+      await serverFactory.deleteServer(id);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar');
+      setActionLoading(null);
+      return false;
+    }
+  }, [id]);
+
+  return { server, loading, error, actionLoading, runAction, removeServer };
+}
