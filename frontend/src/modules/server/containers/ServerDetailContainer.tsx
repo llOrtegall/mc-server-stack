@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog.js';
 import { Spinner } from '../../../shared/components/Spinner.js';
+import { BackupsPanel } from '../../backup/containers/BackupsPanel.js';
+import { ConsolePanel } from '../../console/containers/ConsolePanel.js';
 import { ServerDetail } from '../components/ServerDetail.js';
 import { useServer } from '../hooks/useServer.js';
 
@@ -41,6 +43,9 @@ export function ServerDetailContainer() {
         onAction={runAction}
         onRequestDelete={() => setShowDelete(true)}
       />
+
+      <ConsolePanel serverId={server.getId()} />
+      <BackupsPanel serverId={server.getId()} />
 
       <ConfirmDialog
         open={showDelete}
