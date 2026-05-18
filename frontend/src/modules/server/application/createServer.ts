@@ -7,7 +7,7 @@ interface CreateServerProps {
   input: CreateServerInput;
 }
 
-export function createServer({
+export async function createServer({
   serverRepository,
   input,
 }: CreateServerProps): Promise<Server> {

@@ -6,7 +6,7 @@ interface CreateBackupProps {
   serverId: string;
 }
 
-export function createBackup({
+export async function createBackup({
   backupRepository,
   serverId,
 }: CreateBackupProps): Promise<Backup> {

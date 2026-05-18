@@ -9,7 +9,7 @@ interface LoginProps {
   password: string;
 }
 
-export function login({
+export async function login({
   adminRepository,
   email,
   password,

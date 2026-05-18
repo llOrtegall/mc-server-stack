@@ -6,7 +6,7 @@ interface SendCommandProps {
   command: string;
 }
 
-export function sendCommand({
+export async function sendCommand({
   consoleRepository,
   serverId,
   command,
