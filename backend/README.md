@@ -4,6 +4,10 @@ REST API para gestionar servidores de Minecraft usando Docker. Inspirado en Ater
 
 **Stack:** Bun · TypeScript · Express v5 · PostgreSQL · Dockerode · WebSocket · S3/R2
 
+> Arquitectura DDD / Clean Architecture: cada feature es un módulo con capas
+> `domain → application → infrastructure → interface`. El contrato de la API es
+> **camelCase**.
+
 ---
 
 ## Requisitos
@@ -56,12 +60,15 @@ Todas las rutas protegidas requieren el header:
 Authorization: Bearer <token>
 ```
 
+> El contrato es **camelCase** (`rconPort`, `ramMb`, `cpuLimit`, `createdAt`, ...).
+> Los errores se devuelven siempre como `{ "error": "mensaje" }`.
+
 ---
 
 ### Auth `/api/auth`
 
 #### `POST /api/auth/login`
-Inicia sesión y retorna un JWT.
+Inicia sesión y retorna un JWT. **No existe endpoint de registro** (modelo de admin único).
 
 **Body:**
 ```json
@@ -72,7 +79,7 @@ Inicia sesión y retorna un JWT.
 ```json
 {
   "token": "eyJ...",
-  "admin": { "id": "uuid", "email": "admin@minecraft.local", "created_at": "..." }
+  "admin": { "id": "uuid", "email": "admin@minecraft.local", "createdAt": "..." }
 }
 ```
 
@@ -83,7 +90,7 @@ Retorna la información del admin autenticado.
 
 **Response:**
 ```json
-{ "id": "uuid", "email": "admin@minecraft.local", "created_at": "..." }
+{ "id": "uuid", "email": "admin@minecraft.local", "createdAt": "..." }
 ```
 
 ---
@@ -106,8 +113,8 @@ Crea un nuevo servidor Minecraft y su contenedor Docker.
   "name": "mi-servidor",
   "version": "1.21.4",
   "port": 25565,
-  "ram_mb": 2048,
-  "cpu_limit": 2.0
+  "ramMb": 2048,
+  "cpuLimit": 2.0
 }
 ```
 
@@ -116,8 +123,8 @@ Crea un nuevo servidor Minecraft y su contenedor Docker.
 | `name` | string | ✅ | — |
 | `version` | string | ❌ | `1.21.4` |
 | `port` | number (1024–65534) | ✅ | — |
-| `ram_mb` | number (512–16384) | ❌ | `1024` |
-| `cpu_limit` | number (0.1–8) | ❌ | `1.0` |
+| `ramMb` | number (512–16384) | ❌ | `1024` |
+| `cpuLimit` | number (0.1–8) | ❌ | `1.0` |
 
 > El puerto RCON se asigna automáticamente como `port + 1`.
 
@@ -140,21 +147,21 @@ Elimina el servidor y su contenedor Docker.
 #### `POST /api/servers/:id/start`
 Arranca el servidor.
 
-**Response:** `{ "message": "Server started" }`
+**Response:** `204 No Content`
 
 ---
 
 #### `POST /api/servers/:id/stop`
 Detiene el servidor (graceful, 10s timeout).
 
-**Response:** `{ "message": "Server stopped" }`
+**Response:** `204 No Content`
 
 ---
 
 #### `POST /api/servers/:id/restart`
 Reinicia el servidor.
 
-**Response:** `{ "message": "Server restarted" }`
+**Response:** `204 No Content`
 
 ---
 
@@ -227,11 +234,14 @@ Restaura un backup: descarga el archivo de R2/S3 y reemplaza los datos del servi
 
 > El servidor debe estar detenido antes de restaurar.
 
-**Response:** `{ "message": "Backup restored successfully" }`
+**Response:** `204 No Content`
 
 ---
 
 ## Modelo de datos
+
+El contrato de la API es **camelCase**. Las columnas de la base de datos siguen
+`snake_case`; el mapeo se hace en la capa de infraestructura (repositorios).
 
 ### Server
 
@@ -241,25 +251,27 @@ Restaura un backup: descarga el archivo de R2/S3 y reemplaza los datos del servi
   name: string
   version: string     // e.g. "1.21.4"
   port: number        // puerto Minecraft (externo)
-  rcon_port: number   // port + 1
-  container_id: string | null
+  rconPort: number    // port + 1
+  containerId: string | null
   status: "stopped" | "starting" | "running" | "stopping" | "error"
-  ram_mb: number
-  cpu_limit: number
-  created_at: string
-  updated_at: string
+  ramMb: number
+  cpuLimit: number
+  createdAt: string
+  updatedAt: string
 }
 ```
+
+> `rconPassword` se persiste pero **nunca** se expone en la API (`toPublic()`).
 
 ### Backup
 
 ```ts
 {
   id: string
-  server_id: string
-  s3_key: string
-  size_bytes: number | null
-  created_at: string
+  serverId: string
+  storageKey: string  // clave del objeto en R2/S3
+  sizeBytes: number | null
+  createdAt: string
 }
 ```
 
@@ -267,22 +279,59 @@ Restaura un backup: descarga el archivo de R2/S3 y reemplaza los datos del servi
 
 ## Arquitectura
 
+DDD / Clean Architecture. Cada bounded context es un módulo con sus capas; las
+dependencias apuntan siempre hacia el dominio.
+
 ```
 src/
-├── auth/           # Login + JWT
-├── servers/        # CRUD servidores + control Docker
-├── console/        # Logs HTTP + RCON + WebSocket
-├── backups/        # Backups en R2/S3
-├── db/             # Pool pg + migraciones SQL
-├── docker/         # Wrapper de dockerode
-├── middleware/     # Auth JWT + error handler
-├── config.ts       # Validación de variables de entorno
-└── index.ts        # Express + HTTP server + WebSocket
+├── modules/
+│   ├── server/        # CRUD + control Docker (entidad Server, ServerStatus, ...)
+│   ├── auth/          # Login + JWT (Admin, Email, PasswordHash)
+│   ├── backup/        # Backups en R2/S3 (Backup, StorageKey)
+│   └── console/       # Logs HTTP + RCON + WebSocket
+│       ├── domain/          # entidades, value objects, puertos (interfaces)
+│       ├── application/     # casos de uso + factory
+│       ├── infrastructure/  # adaptadores (Postgres, S3, Docker, RCON, WS)
+│       ├── interface/       # controller + router HTTP
+│       └── test/            # mothers + tests de casos de uso
+├── watchdog/          # servicio de auto-apagado por inactividad (clase inyectable)
+├── db/                # Pool pg + migraciones SQL
+├── docker/            # wrapper de dockerode
+├── middleware/        # auth JWT + error handler
+├── config.ts          # validación de variables de entorno
+└── index.ts           # Express + HTTP server + WebSocket
 ```
 
-Cada módulo sigue la estructura: `router → controller → service`.
+Reglas por capa:
+- **domain**: entidades, value objects (inmutables, autovalidados) y *puertos*
+  (interfaces de repositorios/servicios). Sin dependencias externas.
+- **application**: casos de uso que orquestan el dominio; reciben sus dependencias
+  por parámetro. Lanzan `Error` prefijado con `[useCase]`.
+- **infrastructure**: implementaciones concretas (`PostgresXRepository`,
+  `S3BackupStorage`, `DockerServerRuntime`, `RconConsoleGateway`, ...).
+- **interface**: controllers (validan con Zod, traducen a `AppError`) + routers.
 
-Los servidores Minecraft corren en contenedores Docker usando la imagen [`itzg/minecraft-server`](https://github.com/itzg/docker-minecraft-server). Los datos de cada servidor se persisten en `MC_DATA_PATH/{id}/` en el host.
+Los servidores Minecraft corren en contenedores Docker usando la imagen
+[`itzg/minecraft-server`](https://github.com/itzg/docker-minecraft-server). Los
+datos de cada servidor se persisten en `MC_DATA_PATH/{id}/` en el host.
+
+---
+
+## Tests
+
+El **caso de uso** es la unidad de test. Los repositorios se mockean con un
+`RepositoryMother` y los datos vienen de un **Object Mother** (`@faker-js/faker`).
+Sin base de datos, sin Docker, sin tests de integración/infraestructura.
+
+```bash
+bun test                                   # toda la suite
+bun test src/modules/server/test           # un módulo
+bun test -t "createServer"                 # filtrar por nombre
+```
+
+Los mothers viven en `src/modules/<mod>/test/helpers/` y los tests en
+`src/modules/<mod>/test/application/`. El hook **pre-push** (lefthook) ejecuta
+`bun test` automáticamente.
 
 ---
 
