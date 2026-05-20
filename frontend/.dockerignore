@@ -3,3 +3,9 @@ dist
 .env
 .env.*
 *.log
+
+# Tests (not bundled into the production image)
+**/test/
+src/test
+**/*.test.ts
+**/*.test.tsx
