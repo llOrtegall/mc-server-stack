@@ -66,7 +66,5 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trigger Portainer redeploy
-        run: |
-          curl --fail --silent --show-error -X POST "${{ secrets.PORTAINER_WEBHOOK_BACKEND }}"
-          curl --fail --silent --show-error -X POST "${{ secrets.PORTAINER_WEBHOOK_FRONTEND }}"
+      - name: Images pushed
+        run: echo "Backend & frontend images pushed to GHCR. Redeploy in Portainer (stack → Editor → enable 'Re-pull image' → Update the stack)."
