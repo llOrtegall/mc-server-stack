@@ -68,5 +68,5 @@ jobs:
 
       - name: Trigger Portainer redeploy
         run: |
-          curl --fail --silent --show-error --location \
-            --request POST "${{ secrets.PORTAINER_WEBHOOK_URL }}"
+          curl --fail --silent --show-error -X POST "${{ secrets.PORTAINER_WEBHOOK_BACKEND }}"
+          curl --fail --silent --show-error -X POST "${{ secrets.PORTAINER_WEBHOOK_FRONTEND }}"
