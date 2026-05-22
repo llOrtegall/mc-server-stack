@@ -16,6 +16,7 @@ import {
 } from './modules/console/infrastructure/WsLogStream.js';
 import { consoleRouter } from './modules/console/interface/console.router.js';
 import { serverRouter } from './modules/server/interface/server.router.js';
+import { systemRouter } from './modules/system/interface/system.router.js';
 import { startWatchdog } from './watchdog/watchdog.service.js';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRouter);
+app.use('/api/system', authMiddleware, systemRouter);
 app.use('/api/servers', authMiddleware, serverRouter);
 app.use('/api/servers/:id/console', authMiddleware, consoleRouter);
 app.use('/api/servers/:id/backups', authMiddleware, backupRouter);
