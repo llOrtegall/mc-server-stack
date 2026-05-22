@@ -91,6 +91,17 @@ export async function removeContainer(containerId: string): Promise<void> {
   await container.remove({ force: true });
 }
 
+export async function getHostInfo(): Promise<{
+  cpuCores: number;
+  memoryBytes: number;
+}> {
+  const info = await docker.info();
+  return {
+    cpuCores: info.NCPU ?? 0,
+    memoryBytes: info.MemTotal ?? 0,
+  };
+}
+
 export async function getContainerStatus(containerId: string): Promise<string> {
   try {
     const container = docker.getContainer(containerId);
