@@ -1,13 +1,20 @@
 import { type FormEvent, useState } from 'react';
+import type { HostResources } from '../../system/domain/HostResources.js';
 import type { CreateServerInput } from '../domain/CreateServerInput.js';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onSubmit: (input: CreateServerInput) => Promise<void>;
+  hostResources?: HostResources | null;
 }
 
-export function CreateServerModal({ open, onClose, onSubmit }: Props) {
+export function CreateServerModal({
+  open,
+  onClose,
+  onSubmit,
+  hostResources,
+}: Props) {
   const [name, setName] = useState('');
   const [port, setPort] = useState('');
   const [version, setVersion] = useState('');
@@ -17,6 +24,9 @@ export function CreateServerModal({ open, onClose, onSubmit }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   if (!open) return null;
+
+  const maxCpu = hostResources?.getCpuCores() ?? 8;
+  const maxRam = hostResources?.getMemoryMb() ?? 16384;
 
   function resetForm() {
     setName('');
@@ -114,12 +124,17 @@ export function CreateServerModal({ open, onClose, onSubmit }: Props) {
                 id="srv-ram"
                 type="number"
                 min={512}
-                max={16384}
+                max={maxRam}
                 value={ramMb}
                 onChange={(e) => setRamMb(e.target.value)}
                 placeholder="1024"
                 className="w-full rounded-md bg-gray-700 border border-gray-600 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
               />
+              {hostResources && (
+                <p className="mt-1 text-xs text-gray-400">
+                  Host: {hostResources.getMemoryMb()} MB disponibles
+                </p>
+              )}
             </div>
             <div>
               <label
@@ -132,13 +147,18 @@ export function CreateServerModal({ open, onClose, onSubmit }: Props) {
                 id="srv-cpu"
                 type="number"
                 min={0.1}
-                max={8}
+                max={maxCpu}
                 step={0.1}
                 value={cpuLimit}
                 onChange={(e) => setCpuLimit(e.target.value)}
                 placeholder="1.0"
                 className="w-full rounded-md bg-gray-700 border border-gray-600 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
               />
+              {hostResources && (
+                <p className="mt-1 text-xs text-gray-400">
+                  Host: {hostResources.getCpuCores()} cores disponibles
+                </p>
+              )}
             </div>
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
