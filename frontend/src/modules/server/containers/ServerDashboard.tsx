@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { HostCapacityCard } from '../../system/components/HostCapacityCard.js';
+import { useHostResources } from '../../system/hooks/useHostResources.js';
 import { serverFactory } from '../application/factory.js';
 import { CreateServerModal } from '../components/CreateServerModal.js';
 import { ServerCard } from '../components/ServerCard.js';
@@ -7,6 +9,7 @@ import { useServers } from '../hooks/useServers.js';
 
 export function ServerDashboard() {
   const { servers, loading, refetch } = useServers();
+  const { resources: hostResources } = useHostResources();
   const [modalOpen, setModalOpen] = useState(false);
 
   async function handleCreate(input: CreateServerInput) {
@@ -27,6 +30,12 @@ export function ServerDashboard() {
           Nuevo servidor
         </button>
       </div>
+
+      {hostResources && (
+        <div className="mb-6">
+          <HostCapacityCard resources={hostResources} />
+        </div>
+      )}
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -62,6 +71,7 @@ export function ServerDashboard() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleCreate}
+        hostResources={hostResources}
       />
     </div>
   );
