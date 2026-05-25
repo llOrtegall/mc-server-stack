@@ -1,3 +1,4 @@
+import type { ServerPropertiesInput } from '../domain/ServerProperties.js';
 import { DockerServerRuntime } from '../infrastructure/DockerServerRuntime.js';
 import { PostgresServerRepository } from '../infrastructure/PostgresServerRepository.js';
 import { WatchdogServerActivityTracker } from '../infrastructure/WatchdogServerActivityTracker.js';
@@ -8,6 +9,7 @@ import { listServers } from './listServers.js';
 import { restartServer } from './restartServer.js';
 import { startServer } from './startServer.js';
 import { stopServer } from './stopServer.js';
+import { updateServerProperties } from './updateServerProperties.js';
 
 const serverRepository = new PostgresServerRepository();
 const serverRuntime = new DockerServerRuntime();
@@ -19,6 +21,7 @@ interface CreateServerInput {
   port: number;
   ramMb?: number | null;
   cpuLimit?: number | null;
+  properties?: ServerPropertiesInput | null;
 }
 
 export const serverFactory = {
@@ -40,4 +43,16 @@ export const serverFactory = {
 
   restartServer: (id: string) =>
     restartServer({ serverRepository, serverRuntime, id }),
+
+  updateServerProperties: (
+    id: string,
+    properties?: ServerPropertiesInput | null,
+  ) =>
+    updateServerProperties({
+      serverRepository,
+      serverRuntime,
+      activityTracker,
+      id,
+      properties,
+    }),
 };
