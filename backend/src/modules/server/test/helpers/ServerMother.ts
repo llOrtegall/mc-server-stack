@@ -6,6 +6,10 @@ import { RconPassword } from '../../domain/RconPassword.js';
 import { Server } from '../../domain/Server.js';
 import { ServerName } from '../../domain/ServerName.js';
 import {
+  ServerProperties,
+  type ServerPropertiesInput,
+} from '../../domain/ServerProperties.js';
+import {
   ServerStatus,
   type ServerStatusValue,
 } from '../../domain/ServerStatus.js';
@@ -22,6 +26,7 @@ interface ServerOverrides {
   status?: ServerStatusValue;
   ramMb?: number;
   cpuLimit?: number;
+  properties?: ServerPropertiesInput;
 }
 
 export function create(overrides: ServerOverrides = {}): Server {
@@ -42,5 +47,6 @@ export function create(overrides: ServerOverrides = {}): Server {
     status: ServerStatus.create(overrides.status ?? 'stopped'),
     ramMb: RamMb.create(overrides.ramMb),
     cpuLimit: CpuLimit.create(overrides.cpuLimit),
+    properties: ServerProperties.create(overrides.properties),
   });
 }

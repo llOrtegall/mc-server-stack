@@ -3,6 +3,11 @@ import { Port } from './Port.js';
 import { RamMb } from './RamMb.js';
 import { RconPassword } from './RconPassword.js';
 import { ServerName } from './ServerName.js';
+import {
+  ServerProperties,
+  type ServerPropertiesInput,
+  type ServerPropertiesPrimitives,
+} from './ServerProperties.js';
 import { ServerStatus } from './ServerStatus.js';
 import { Version } from './Version.js';
 
@@ -17,6 +22,7 @@ export interface ServerPrimitives {
   status: string;
   ramMb: number;
   cpuLimit: number;
+  properties: ServerPropertiesPrimitives;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -33,6 +39,7 @@ export class Server {
     private readonly status: ServerStatus,
     private readonly ramMb: RamMb,
     private readonly cpuLimit: CpuLimit,
+    private readonly properties: ServerProperties,
     private readonly createdAt: string | null,
     private readonly updatedAt: string | null,
   ) {}
@@ -48,6 +55,7 @@ export class Server {
     status: ServerStatus;
     ramMb: RamMb;
     cpuLimit: CpuLimit;
+    properties: ServerProperties;
     createdAt?: string | null;
     updatedAt?: string | null;
   }): Server {
@@ -62,6 +70,7 @@ export class Server {
       props.status,
       props.ramMb,
       props.cpuLimit,
+      props.properties,
       props.createdAt ?? null,
       props.updatedAt ?? null,
     );
@@ -78,6 +87,7 @@ export class Server {
     port: number;
     ramMb?: number | null;
     cpuLimit?: number | null;
+    properties?: ServerPropertiesInput | null;
   }): Server {
     const port = Port.create(input.port);
     return Server.create({
@@ -91,6 +101,7 @@ export class Server {
       status: ServerStatus.stopped(),
       ramMb: RamMb.create(input.ramMb),
       cpuLimit: CpuLimit.create(input.cpuLimit),
+      properties: ServerProperties.create(input.properties),
     });
   }
 
@@ -107,6 +118,7 @@ export class Server {
       status: ServerStatus.fromPrimitive(data.status),
       ramMb: RamMb.fromPrimitive(data.ramMb),
       cpuLimit: CpuLimit.fromPrimitive(data.cpuLimit),
+      properties: ServerProperties.fromPrimitive(data.properties),
       createdAt: data.createdAt ?? null,
       updatedAt: data.updatedAt ?? null,
     });
@@ -132,6 +144,10 @@ export class Server {
     return Server.create({ ...this.props(), status });
   }
 
+  withProperties(properties: ServerProperties): Server {
+    return Server.create({ ...this.props(), properties });
+  }
+
   private props() {
     return {
       id: this.id,
@@ -144,6 +160,7 @@ export class Server {
       status: this.status,
       ramMb: this.ramMb,
       cpuLimit: this.cpuLimit,
+      properties: this.properties,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
@@ -165,6 +182,7 @@ export class Server {
       status: this.status.toPrimitive(),
       ramMb: this.ramMb.toPrimitive(),
       cpuLimit: this.cpuLimit.toPrimitive(),
+      properties: this.properties.toPrimitive(),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
