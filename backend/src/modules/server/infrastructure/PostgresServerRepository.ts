@@ -13,6 +13,7 @@ const COLUMNS = `id,
   status,
   ram_mb AS "ramMb",
   cpu_limit AS "cpuLimit",
+  properties,
   created_at AS "createdAt",
   updated_at AS "updatedAt"`;
 
@@ -33,8 +34,8 @@ export class PostgresServerRepository implements ServerRepository {
   async create(server: Server): Promise<Server> {
     const data = server.toPrimitive();
     const result = await pool.query<ServerRow>(
-      `INSERT INTO servers (name, version, port, rcon_port, rcon_password, ram_mb, cpu_limit, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO servers (name, version, port, rcon_port, rcon_password, ram_mb, cpu_limit, status, properties)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING ${COLUMNS}`,
       [
         data.name,
@@ -45,6 +46,7 @@ export class PostgresServerRepository implements ServerRepository {
         data.ramMb,
         data.cpuLimit,
         data.status,
+        JSON.stringify(data.properties),
       ],
     );
     const row = result.rows[0];
@@ -74,8 +76,9 @@ export class PostgresServerRepository implements ServerRepository {
     const result = await pool.query<ServerRow>(
       `UPDATE servers
        SET name = $1, version = $2, port = $3, rcon_port = $4, rcon_password = $5,
-           container_id = $6, status = $7, ram_mb = $8, cpu_limit = $9, updated_at = NOW()
-       WHERE id = $10
+           container_id = $6, status = $7, ram_mb = $8, cpu_limit = $9,
+           properties = $10, updated_at = NOW()
+       WHERE id = $11
        RETURNING ${COLUMNS}`,
       [
         data.name,
@@ -87,6 +90,7 @@ export class PostgresServerRepository implements ServerRepository {
         data.status,
         data.ramMb,
         data.cpuLimit,
+        JSON.stringify(data.properties),
         data.id,
       ],
     );

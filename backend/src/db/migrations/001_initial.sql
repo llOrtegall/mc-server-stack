@@ -18,9 +18,14 @@ CREATE TABLE IF NOT EXISTS servers (
   status VARCHAR(20) NOT NULL DEFAULT 'stopped',
   ram_mb INTEGER NOT NULL DEFAULT 1024,
   cpu_limit FLOAT NOT NULL DEFAULT 1.0,
+  properties JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Idempotent upgrade for servers tables created before the properties column existed.
+ALTER TABLE servers
+  ADD COLUMN IF NOT EXISTS properties JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS backups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
