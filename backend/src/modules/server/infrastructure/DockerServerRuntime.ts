@@ -19,6 +19,7 @@ export class DockerServerRuntime implements ServerRuntime {
       rconPassword: data.rconPassword,
       ramMb: data.ramMb,
       cpuLimit: data.cpuLimit,
+      properties: data.properties,
     });
   }
 

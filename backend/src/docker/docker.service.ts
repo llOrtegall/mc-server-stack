@@ -1,6 +1,7 @@
 import type { PassThrough } from 'node:stream';
 import Docker from 'dockerode';
 import { config } from '../config.js';
+import type { ServerPropertiesPrimitives } from '../modules/server/domain/ServerProperties.js';
 
 export const docker = new Docker({ socketPath: config.dockerSocket });
 
@@ -13,6 +14,25 @@ export interface ContainerOptions {
   rconPassword: string;
   ramMb: number;
   cpuLimit: number;
+  properties: ServerPropertiesPrimitives;
+}
+
+/** Maps the curated server.properties bag to itzg/minecraft-server env vars. */
+function propertiesToEnv(p: ServerPropertiesPrimitives): string[] {
+  const env = [
+    `DIFFICULTY=${p.difficulty}`,
+    `MODE=${p.gamemode}`,
+    `MAX_PLAYERS=${p.maxPlayers}`,
+    `PVP=${p.pvp}`,
+    `HARDCORE=${p.hardcore}`,
+    `ONLINE_MODE=${p.onlineMode}`,
+    `VIEW_DISTANCE=${p.viewDistance}`,
+    `ENABLE_WHITELIST=${p.whitelistEnabled}`,
+  ];
+  if (p.motd) env.push(`MOTD=${p.motd}`);
+  if (p.seed) env.push(`SEED=${p.seed}`);
+  if (p.whitelist.length > 0) env.push(`WHITELIST=${p.whitelist.join(',')}`);
+  return env;
 }
 
 async function pullImage(image: string): Promise<void> {
@@ -46,6 +66,7 @@ export async function createContainer(opts: ContainerOptions): Promise<string> {
       `RCON_PASSWORD=${opts.rconPassword}`,
       'RCON_PORT=25575',
       'TYPE=VANILLA',
+      ...propertiesToEnv(opts.properties),
     ],
     ExposedPorts: {
       '25565/tcp': {},
