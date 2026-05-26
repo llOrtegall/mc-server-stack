@@ -1,6 +1,8 @@
 import { type FormEvent, useState } from 'react';
 import type { HostResources } from '../../system/domain/HostResources.js';
 import type { CreateServerInput } from '../domain/CreateServerInput.js';
+import type { ServerPropertiesInput } from '../domain/ServerProperties.js';
+import { ServerPropertiesForm } from './ServerPropertiesForm.js';
 
 interface Props {
   open: boolean;
@@ -20,6 +22,7 @@ export function CreateServerModal({
   const [version, setVersion] = useState('');
   const [ramMb, setRamMb] = useState('');
   const [cpuLimit, setCpuLimit] = useState('');
+  const [properties, setProperties] = useState<ServerPropertiesInput>({});
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -34,6 +37,7 @@ export function CreateServerModal({
     setVersion('');
     setRamMb('');
     setCpuLimit('');
+    setProperties({});
     setError('');
   }
 
@@ -48,6 +52,7 @@ export function CreateServerModal({
         version: version || undefined,
         ramMb: ramMb ? Number(ramMb) : undefined,
         cpuLimit: cpuLimit ? Number(cpuLimit) : undefined,
+        properties,
       });
       resetForm();
     } catch (err) {
@@ -59,7 +64,7 @@ export function CreateServerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-md bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-bold text-white mb-4">Nuevo servidor</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
@@ -161,6 +166,16 @@ export function CreateServerModal({
               )}
             </div>
           </div>
+
+          <hr className="border-gray-700" />
+
+          <ServerPropertiesForm
+            value={properties}
+            onChange={setProperties}
+            disabled={submitting}
+            idPrefix="create"
+          />
+
           {error && <p className="text-sm text-red-400">{error}</p>}
           <div className="flex justify-end gap-3 pt-2">
             <button
