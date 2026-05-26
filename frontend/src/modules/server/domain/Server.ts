@@ -1,3 +1,7 @@
+import {
+  DEFAULT_PROPERTIES,
+  type ServerPropertiesPrimitives,
+} from './ServerProperties.js';
 import { ServerStatus } from './ServerStatus.js';
 
 /** Public server shape exposed by the API (camelCase, no rconPassword). */
@@ -11,6 +15,7 @@ export interface ServerPrimitives {
   status: string;
   ramMb: number;
   cpuLimit: number;
+  properties: ServerPropertiesPrimitives;
   createdAt: string;
   updatedAt: string;
 }
@@ -25,6 +30,7 @@ export class Server {
   private readonly status: ServerStatus;
   private readonly ramMb: number;
   private readonly cpuLimit: number;
+  private readonly properties: ServerPropertiesPrimitives;
   private readonly createdAt: string;
   private readonly updatedAt: string;
 
@@ -38,6 +44,7 @@ export class Server {
     status: ServerStatus;
     ramMb: number;
     cpuLimit: number;
+    properties: ServerPropertiesPrimitives;
     createdAt: string;
     updatedAt: string;
   }) {
@@ -50,6 +57,7 @@ export class Server {
     this.status = props.status;
     this.ramMb = props.ramMb;
     this.cpuLimit = props.cpuLimit;
+    this.properties = props.properties;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
   }
@@ -66,6 +74,7 @@ export class Server {
       status: ServerStatus.fromPrimitive(data.status),
       ramMb: data.ramMb,
       cpuLimit: data.cpuLimit,
+      properties: data.properties ?? DEFAULT_PROPERTIES,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });
@@ -103,6 +112,10 @@ export class Server {
     return this.cpuLimit;
   }
 
+  getProperties(): ServerPropertiesPrimitives {
+    return this.properties;
+  }
+
   getCreatedAt(): string {
     return this.createdAt;
   }
@@ -122,6 +135,7 @@ export class Server {
       status: this.status.toPrimitive(),
       ramMb: this.ramMb,
       cpuLimit: this.cpuLimit,
+      properties: this.properties,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };

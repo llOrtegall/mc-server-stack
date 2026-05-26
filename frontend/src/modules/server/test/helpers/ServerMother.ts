@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Server, type ServerPrimitives } from '../../domain/Server.js';
+import { DEFAULT_PROPERTIES } from '../../domain/ServerProperties.js';
 
 export function create(overrides: Partial<ServerPrimitives> = {}): Server {
   const port = overrides.port ?? faker.number.int({ min: 1024, max: 65000 });
@@ -13,6 +14,7 @@ export function create(overrides: Partial<ServerPrimitives> = {}): Server {
     status: 'stopped',
     ramMb: 1024,
     cpuLimit: 1,
+    properties: DEFAULT_PROPERTIES,
     createdAt: faker.date.past().toISOString(),
     updatedAt: faker.date.recent().toISOString(),
     ...overrides,
