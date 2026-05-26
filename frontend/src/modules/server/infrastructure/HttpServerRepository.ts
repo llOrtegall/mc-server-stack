@@ -2,6 +2,7 @@ import { apiFetch } from '../../../api/client.js';
 import type { CreateServerInput } from '../domain/CreateServerInput.js';
 import { Server, type ServerPrimitives } from '../domain/Server.js';
 import { ServerList } from '../domain/ServerList.js';
+import type { ServerPropertiesInput } from '../domain/ServerProperties.js';
 import type { ServerRepository } from '../domain/ServerRepository.js';
 
 export class HttpServerRepository implements ServerRepository {
@@ -19,6 +20,14 @@ export class HttpServerRepository implements ServerRepository {
     const data = await apiFetch<ServerPrimitives>('/api/servers', {
       method: 'POST',
       body: JSON.stringify(input),
+    });
+    return Server.fromPrimitive(data);
+  }
+
+  async update(id: string, properties: ServerPropertiesInput): Promise<Server> {
+    const data = await apiFetch<ServerPrimitives>(`/api/servers/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ properties }),
     });
     return Server.fromPrimitive(data);
   }

@@ -72,5 +72,13 @@ export function useServer(id: string) {
     }
   }, [id]);
 
-  return { server, loading, error, actionLoading, runAction, removeServer };
+  return {
+    server,
+    loading,
+    error,
+    actionLoading,
+    runAction,
+    removeServer,
+    refresh: fetchServer,
+  };
 }

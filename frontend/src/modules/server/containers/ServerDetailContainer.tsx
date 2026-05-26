@@ -6,12 +6,20 @@ import { BackupsPanel } from '../../backup/containers/BackupsPanel.js';
 import { ConsolePanel } from '../../console/containers/ConsolePanel.js';
 import { ServerDetail } from '../components/ServerDetail.js';
 import { useServer } from '../hooks/useServer.js';
+import { ServerPropertiesPanel } from './ServerPropertiesPanel.js';
 
 export function ServerDetailContainer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { server, loading, error, actionLoading, runAction, removeServer } =
-    useServer(id ?? '');
+  const {
+    server,
+    loading,
+    error,
+    actionLoading,
+    runAction,
+    removeServer,
+    refresh,
+  } = useServer(id ?? '');
   const [showDelete, setShowDelete] = useState(false);
 
   if (loading) return <Spinner />;
@@ -43,6 +51,8 @@ export function ServerDetailContainer() {
         onAction={runAction}
         onRequestDelete={() => setShowDelete(true)}
       />
+
+      <ServerPropertiesPanel server={server} onUpdated={refresh} />
 
       <ConsolePanel serverId={server.getId()} />
       <BackupsPanel serverId={server.getId()} />
