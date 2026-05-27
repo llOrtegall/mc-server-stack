@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { serverFactory } from '../application/factory.js';
 import type { Server } from '../domain/Server.js';
 
@@ -14,13 +14,20 @@ export function useServer(id: string) {
     ServerAction | 'delete' | null
   >(null);
 
+  // Mirrors `server` without being a dependency of fetchServer — keeping `server`
+  // in the deps made fetchServer change on every fetch, which re-fired the mount
+  // effect and caused an infinite refetch loop.
+  const serverRef = useRef<Server | null>(null);
+
   const fetchServer = useCallback(async () => {
     if (!id) return;
     try {
-      setServer(await serverFactory.getServer(id));
+      const next = await serverFactory.getServer(id);
+      serverRef.current = next;
+      setServer(next);
       setError('');
     } catch (err) {
-      if (!server) {
+      if (!serverRef.current) {
         setError(
           err instanceof Error ? err.message : 'Error al cargar servidor',
         );
@@ -28,9 +35,14 @@ export function useServer(id: string) {
     } finally {
       setLoading(false);
     }
-  }, [id, server]);
+  }, [id]);
 
+  // Reset and load whenever the id changes (fetchServer is stable per id).
   useEffect(() => {
+    serverRef.current = null;
+    setServer(null);
+    setLoading(true);
+    setError('');
     fetchServer();
   }, [fetchServer]);
 
