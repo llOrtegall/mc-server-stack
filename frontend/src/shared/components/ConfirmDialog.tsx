@@ -1,3 +1,7 @@
+import { AlertTriangle } from 'lucide-react';
+import { Button } from './ui/Button.js';
+import { Card } from './ui/Card.js';
+
 interface Props {
   open: boolean;
   title: string;
@@ -20,31 +24,33 @@ export function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-sm bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-        <p className="text-sm text-gray-400 mb-6">{message}</p>
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-md px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className={`rounded-md px-4 py-2 text-sm font-medium text-white transition-colors ${
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-sm p-6">
+        <div className="mb-3 flex items-center gap-3">
+          <span
+            className={
               destructive
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-green-600 hover:bg-green-700'
-            }`}
+                ? 'flex h-10 w-10 items-center justify-center rounded-full bg-red-500/15 text-red-400'
+                : 'flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400'
+            }
+          >
+            <AlertTriangle className="h-5 w-5" />
+          </span>
+          <h3 className="text-lg font-bold text-white">{title}</h3>
+        </div>
+        <p className="mb-6 text-sm text-zinc-400">{message}</p>
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button
+            variant={destructive ? 'danger' : 'primary'}
+            onClick={onConfirm}
           >
             {confirmLabel}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
