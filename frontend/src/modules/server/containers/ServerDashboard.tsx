@@ -1,4 +1,6 @@
+import { Plus, Server as ServerIcon } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '../../../shared/components/ui/Button.js';
 import { HostCapacityCard } from '../../system/components/HostCapacityCard.js';
 import { useHostResources } from '../../system/hooks/useHostResources.js';
 import { serverFactory } from '../application/factory.js';
@@ -20,15 +22,19 @@ export function ServerDashboard() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Servidores</h1>
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
-        >
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            Servidores
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            {servers.length} {servers.length === 1 ? 'servidor' : 'servidores'}
+          </p>
+        </div>
+        <Button onClick={() => setModalOpen(true)}>
+          <Plus className="h-4 w-4" />
           Nuevo servidor
-        </button>
+        </Button>
       </div>
 
       {hostResources && (
@@ -42,22 +48,22 @@ export function ServerDashboard() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-32 animate-pulse rounded-lg bg-gray-800"
+              className="h-36 animate-pulse rounded-2xl border border-white/5 bg-zinc-900/40"
             />
           ))}
         </div>
       ) : servers.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-gray-400 mb-4">
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-white/10 bg-zinc-900/30 py-16 text-center">
+          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-zinc-500">
+            <ServerIcon className="h-7 w-7" />
+          </span>
+          <p className="mb-4 text-zinc-400">
             No hay servidores. Crea uno para empezar.
           </p>
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="text-green-400 hover:text-green-300 underline"
-          >
+          <Button variant="secondary" onClick={() => setModalOpen(true)}>
+            <Plus className="h-4 w-4" />
             Crear servidor
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

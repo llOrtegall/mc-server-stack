@@ -1,4 +1,20 @@
+import {
+  Calendar,
+  ChevronLeft,
+  Cpu,
+  MemoryStick,
+  Play,
+  Plug,
+  RotateCw,
+  Square,
+  Tag,
+  Terminal,
+  Trash2,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { Button } from '../../../shared/components/ui/Button.js';
+import { Card } from '../../../shared/components/ui/Card.js';
 import type { Server } from '../domain/Server.js';
 import { StatusBadge } from './StatusBadge.js';
 
@@ -27,84 +43,120 @@ export function ServerDetail({
     <div>
       <Link
         to="/"
-        className="text-sm text-gray-400 hover:text-gray-300 mb-4 inline-block"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-zinc-400 transition-colors hover:text-zinc-200"
       >
-        &larr; Volver
+        <ChevronLeft className="h-4 w-4" />
+        Volver
       </Link>
 
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">
+      <Card className="p-6">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-bold text-white">
               {server.getName()}
             </h1>
-            <p className="text-sm text-gray-400 mt-1">ID: {server.getId()}</p>
+            <p className="mt-1 font-mono text-xs text-zinc-500">
+              ID: {server.getId()}
+            </p>
           </div>
           <StatusBadge status={value} />
         </div>
 
-        {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
+        {error && (
+          <p className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+            {error}
+          </p>
+        )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-          <InfoItem label="Version" value={server.getVersion()} />
-          <InfoItem label="Puerto" value={String(server.getPort())} />
-          <InfoItem label="Puerto RCON" value={String(server.getRconPort())} />
-          <InfoItem label="RAM" value={`${server.getRamMb()} MB`} />
-          <InfoItem label="CPU Limit" value={String(server.getCpuLimit())} />
-          <InfoItem
+        <div className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/5 sm:grid-cols-3">
+          <Info icon={<Tag />} label="Version" value={server.getVersion()} />
+          <Info
+            icon={<Plug />}
+            label="Puerto"
+            value={String(server.getPort())}
+          />
+          <Info
+            icon={<Terminal />}
+            label="Puerto RCON"
+            value={String(server.getRconPort())}
+          />
+          <Info
+            icon={<MemoryStick />}
+            label="RAM"
+            value={`${server.getRamMb()} MB`}
+          />
+          <Info
+            icon={<Cpu />}
+            label="CPU Limit"
+            value={String(server.getCpuLimit())}
+          />
+          <Info
+            icon={<Calendar />}
             label="Creado"
             value={new Date(server.getCreatedAt()).toLocaleDateString()}
           />
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={() => onAction('start')}
             disabled={busy || !status.canStart()}
-            className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
+            <Play className="h-4 w-4" />
             {actionLoading === 'start' || value === 'starting'
               ? 'Iniciando...'
               : 'Iniciar'}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="warning"
             onClick={() => onAction('stop')}
             disabled={busy || !status.canStopOrRestart()}
-            className="rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
+            <Square className="h-4 w-4" />
             {actionLoading === 'stop' || value === 'stopping'
               ? 'Deteniendo...'
               : 'Detener'}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="info"
             onClick={() => onAction('restart')}
             disabled={busy || !status.canStopOrRestart()}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
+            <RotateCw className="h-4 w-4" />
             {actionLoading === 'restart' ? 'Reiniciando...' : 'Reiniciar'}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="danger"
             onClick={onRequestDelete}
             disabled={busy}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors ml-auto"
+            className="ml-auto"
           >
+            <Trash2 className="h-4 w-4" />
             {actionLoading === 'delete' ? 'Eliminando...' : 'Eliminar'}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function Info({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
-    <div>
-      <span className="text-xs text-gray-500">{label}</span>
-      <p className="text-sm text-gray-300">{value}</p>
+    <div className="bg-zinc-900/40 px-4 py-3">
+      <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
+        {label}
+      </span>
+      <p className="mt-1 text-sm font-medium text-zinc-200">{value}</p>
     </div>
   );
 }
