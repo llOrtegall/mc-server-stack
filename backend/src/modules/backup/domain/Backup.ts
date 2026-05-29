@@ -1,9 +1,12 @@
+import { BackupLocation, type BackupLocationValue } from './BackupLocation.js';
 import { StorageKey } from './StorageKey.js';
 
 export interface BackupPrimitives {
   id: string | null;
   serverId: string;
   storageKey: string;
+  location: BackupLocationValue;
+  auto: boolean;
   sizeBytes: number | null;
   createdAt: string | null;
 }
@@ -13,6 +16,8 @@ export class Backup {
     private readonly id: string | null,
     private readonly serverId: string,
     private readonly storageKey: StorageKey,
+    private readonly location: BackupLocation,
+    private readonly auto: boolean,
     private readonly sizeBytes: number | null,
     private readonly createdAt: string | null,
   ) {}
@@ -21,6 +26,8 @@ export class Backup {
     id: string | null;
     serverId: string;
     storageKey: StorageKey;
+    location: BackupLocation;
+    auto: boolean;
     sizeBytes: number | null;
     createdAt?: string | null;
   }): Backup {
@@ -28,6 +35,8 @@ export class Backup {
       props.id,
       props.serverId,
       props.storageKey,
+      props.location,
+      props.auto,
       props.sizeBytes,
       props.createdAt ?? null,
     );
@@ -37,12 +46,16 @@ export class Backup {
   static register(input: {
     serverId: string;
     storageKey: string;
+    location: BackupLocationValue;
+    auto: boolean;
     sizeBytes: number | null;
   }): Backup {
     return Backup.create({
       id: null,
       serverId: input.serverId,
       storageKey: StorageKey.create(input.storageKey),
+      location: BackupLocation.create(input.location),
+      auto: input.auto,
       sizeBytes: input.sizeBytes,
       createdAt: null,
     });
@@ -54,6 +67,8 @@ export class Backup {
       id: data.id,
       serverId: data.serverId,
       storageKey: StorageKey.fromPrimitive(data.storageKey),
+      location: BackupLocation.fromPrimitive(data.location),
+      auto: data.auto,
       sizeBytes: data.sizeBytes,
       createdAt: data.createdAt ?? null,
     });
@@ -67,6 +82,14 @@ export class Backup {
     return this.storageKey.toPrimitive();
   }
 
+  getLocation(): BackupLocationValue {
+    return this.location.toPrimitive();
+  }
+
+  isAuto(): boolean {
+    return this.auto;
+  }
+
   equals(other: Backup): boolean {
     return this.id !== null && this.id === other.id;
   }
@@ -76,6 +99,8 @@ export class Backup {
       id: this.id,
       serverId: this.serverId,
       storageKey: this.storageKey.toPrimitive(),
+      location: this.location.toPrimitive(),
+      auto: this.auto,
       sizeBytes: this.sizeBytes,
       createdAt: this.createdAt,
     };
