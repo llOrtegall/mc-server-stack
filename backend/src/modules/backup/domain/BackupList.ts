@@ -16,6 +16,10 @@ export class BackupList {
     return this.backups.length;
   }
 
+  toArray(): Backup[] {
+    return [...this.backups];
+  }
+
   toPrimitive(): BackupPrimitives[] {
     return this.backups.map((b) => b.toPrimitive());
   }
