@@ -8,19 +8,25 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { config } from '../../../config.js';
+import type { R2Config } from '../../../config.js';
 import type { BackupStorage } from '../domain/BackupStorage.js';
 
 export class S3BackupStorage implements BackupStorage {
-  private readonly client = new S3Client({
-    endpoint: config.r2.endpoint,
-    region: 'auto',
-    credentials: {
-      accessKeyId: config.r2.accessKeyId,
-      secretAccessKey: config.r2.secretAccessKey,
-    },
-    forcePathStyle: true,
-  });
+  private readonly client: S3Client;
+  private readonly bucket: string;
+
+  constructor(r2: R2Config) {
+    this.bucket = r2.bucket;
+    this.client = new S3Client({
+      endpoint: r2.endpoint,
+      region: 'auto',
+      credentials: {
+        accessKeyId: r2.accessKeyId,
+        secretAccessKey: r2.secretAccessKey,
+      },
+      forcePathStyle: true,
+    });
+  }
 
   async upload(
     key: string,
@@ -29,7 +35,7 @@ export class S3BackupStorage implements BackupStorage {
   ): Promise<void> {
     await this.client.send(
       new PutObjectCommand({
-        Bucket: config.r2.bucket,
+        Bucket: this.bucket,
         Key: key,
         Body: createReadStream(filePath),
         ContentType: 'application/gzip',
@@ -40,7 +46,7 @@ export class S3BackupStorage implements BackupStorage {
 
   async download(key: string): Promise<string> {
     const response = await this.client.send(
-      new GetObjectCommand({ Bucket: config.r2.bucket, Key: key }),
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
     );
     if (!response.Body) throw new Error('[S3BackupStorage] Empty backup file');
 
@@ -51,7 +57,7 @@ export class S3BackupStorage implements BackupStorage {
 
   async delete(key: string): Promise<void> {
     await this.client.send(
-      new DeleteObjectCommand({ Bucket: config.r2.bucket, Key: key }),
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
   }
 }
