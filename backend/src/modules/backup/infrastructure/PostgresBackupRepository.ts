@@ -6,6 +6,8 @@ import type { BackupRepository } from '../domain/BackupRepository.js';
 const COLUMNS = `id,
   server_id AS "serverId",
   s3_key AS "storageKey",
+  location,
+  auto,
   size_bytes AS "sizeBytes",
   created_at AS "createdAt"`;
 
@@ -19,6 +21,8 @@ function rowToBackup(row: BackupRow): Backup {
     id: row.id,
     serverId: row.serverId,
     storageKey: row.storageKey,
+    location: row.location,
+    auto: row.auto,
     sizeBytes: row.sizeBytes === null ? null : Number(row.sizeBytes),
     createdAt: row.createdAt ? row.createdAt.toISOString() : null,
   });
@@ -28,10 +32,16 @@ export class PostgresBackupRepository implements BackupRepository {
   async create(backup: Backup): Promise<Backup> {
     const data = backup.toPrimitive();
     const result = await pool.query<BackupRow>(
-      `INSERT INTO backups (server_id, s3_key, size_bytes)
-       VALUES ($1, $2, $3)
+      `INSERT INTO backups (server_id, s3_key, location, auto, size_bytes)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING ${COLUMNS}`,
-      [data.serverId, data.storageKey, data.sizeBytes],
+      [
+        data.serverId,
+        data.storageKey,
+        data.location,
+        data.auto,
+        data.sizeBytes,
+      ],
     );
     const row = result.rows[0];
     if (!row)
@@ -43,6 +53,19 @@ export class PostgresBackupRepository implements BackupRepository {
     const result = await pool.query<BackupRow>(
       `SELECT ${COLUMNS} FROM backups WHERE server_id = $1 ORDER BY created_at DESC`,
       [serverId],
+    );
+    return BackupList.create(result.rows.map(rowToBackup));
+  }
+
+  async listAutoByServerAndLocation(
+    serverId: string,
+    location: string,
+  ): Promise<BackupList> {
+    const result = await pool.query<BackupRow>(
+      `SELECT ${COLUMNS} FROM backups
+       WHERE server_id = $1 AND location = $2 AND auto = true
+       ORDER BY created_at DESC`,
+      [serverId, location],
     );
     return BackupList.create(result.rows.map(rowToBackup));
   }
