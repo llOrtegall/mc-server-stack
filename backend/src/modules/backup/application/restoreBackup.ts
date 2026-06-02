@@ -1,10 +1,10 @@
 import type { BackupArchiver } from '../domain/BackupArchiver.js';
 import type { BackupRepository } from '../domain/BackupRepository.js';
-import type { BackupStorage } from '../domain/BackupStorage.js';
+import type { BackupStorageResolver } from '../domain/BackupStorageResolver.js';
 
 interface RestoreBackupProps {
   backupRepository: BackupRepository;
-  backupStorage: BackupStorage;
+  backupStorages: BackupStorageResolver;
   backupArchiver: BackupArchiver;
   backupId: string;
   serverId: string;
@@ -12,7 +12,7 @@ interface RestoreBackupProps {
 
 export async function restoreBackup({
   backupRepository,
-  backupStorage,
+  backupStorages,
   backupArchiver,
   backupId,
   serverId,
@@ -20,7 +20,8 @@ export async function restoreBackup({
   const backup = await backupRepository.getByIdForServer(backupId, serverId);
   if (backup === null) throw new Error('[restoreBackup] Backup not found');
 
-  const path = await backupStorage.download(backup.getStorageKey());
+  const storage = backupStorages.for(backup.getLocation());
+  const path = await storage.download(backup.getStorageKey());
   try {
     await backupArchiver.unpackInto(serverId, path);
   } finally {
