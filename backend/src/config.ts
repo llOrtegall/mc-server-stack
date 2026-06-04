@@ -4,6 +4,25 @@ function requireEnv(key: string): string {
   return val;
 }
 
+export interface R2Config {
+  endpoint: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucket: string;
+}
+
+/** Remote backup storage is optional — enabled only when all R2 vars are set. */
+function r2Config(): R2Config | null {
+  const endpoint = process.env.R2_ENDPOINT;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const bucket = process.env.R2_BUCKET;
+  if (endpoint && accessKeyId && secretAccessKey && bucket) {
+    return { endpoint, accessKeyId, secretAccessKey, bucket };
+  }
+  return null;
+}
+
 export const config = {
   port: Number(process.env.PORT ?? 3000),
   databaseUrl: requireEnv('DATABASE_URL'),
@@ -11,10 +30,6 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   dockerSocket: process.env.DOCKER_SOCKET ?? '/var/run/docker.sock',
   mcDataPath: process.env.MC_DATA_PATH ?? '/data/mc-servers',
-  r2: {
-    endpoint: requireEnv('R2_ENDPOINT'),
-    accessKeyId: requireEnv('R2_ACCESS_KEY_ID'),
-    secretAccessKey: requireEnv('R2_SECRET_ACCESS_KEY'),
-    bucket: requireEnv('R2_BUCKET'),
-  },
+  backupLocalPath: process.env.BACKUP_LOCAL_PATH ?? '/data/mc-backups',
+  r2: r2Config(),
 };
