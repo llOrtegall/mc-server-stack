@@ -31,6 +31,23 @@ CREATE TABLE IF NOT EXISTS backups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   server_id UUID NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
   s3_key VARCHAR(500) NOT NULL,
+  location VARCHAR(20) NOT NULL DEFAULT 's3',
+  auto BOOLEAN NOT NULL DEFAULT false,
   size_bytes BIGINT,
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Idempotent upgrade for backups tables created before location/auto existed.
+ALTER TABLE backups
+  ADD COLUMN IF NOT EXISTS location VARCHAR(20) NOT NULL DEFAULT 's3';
+ALTER TABLE backups
+  ADD COLUMN IF NOT EXISTS auto BOOLEAN NOT NULL DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS backup_schedules (
+  server_id UUID PRIMARY KEY REFERENCES servers(id) ON DELETE CASCADE,
+  enabled BOOLEAN NOT NULL DEFAULT false,
+  frequency VARCHAR(20) NOT NULL DEFAULT 'daily',
+  retention INTEGER NOT NULL DEFAULT 7,
+  location VARCHAR(20) NOT NULL DEFAULT 'local',
+  last_run_at TIMESTAMPTZ
 );
