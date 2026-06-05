@@ -9,6 +9,7 @@ import { authMiddleware } from './middleware/auth.middleware.js';
 import { errorMiddleware } from './middleware/error.middleware.js';
 import { authFactory } from './modules/auth/application/factory.js';
 import { authRouter } from './modules/auth/interface/auth.router.js';
+import { startBackupScheduler } from './modules/backup/application/backupScheduler.service.js';
 import { backupRouter } from './modules/backup/interface/backup.router.js';
 import {
   registerClient,
@@ -81,6 +82,7 @@ async function main() {
   const adminPassword = process.env.ADMIN_PASSWORD ?? 'changeme123';
   await authFactory.createAdminIfNone(adminEmail, adminPassword);
   startWatchdog();
+  startBackupScheduler();
 
   server.listen(config.port, () => {
     console.log(`[server] listening on http://localhost:${config.port}`);
