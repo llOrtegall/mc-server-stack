@@ -8,6 +8,7 @@ export function create(
   return {
     create: mock(async (backup) => backup),
     listByServer: mock(async () => BackupList.create([])),
+    listAutoByServerAndLocation: mock(async () => BackupList.create([])),
     getByIdForServer: mock(async () => null),
     delete: mock(async () => true),
     ...overrides,
