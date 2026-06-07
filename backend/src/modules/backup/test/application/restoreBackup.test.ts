@@ -4,14 +4,16 @@ import * as BackupArchiverMother from '../helpers/BackupArchiverMother.js';
 import * as BackupMother from '../helpers/BackupMother.js';
 import * as BackupRepositoryMother from '../helpers/BackupRepositoryMother.js';
 import * as BackupStorageMother from '../helpers/BackupStorageMother.js';
+import * as BackupStorageResolverMother from '../helpers/BackupStorageResolverMother.js';
 
 describe('restoreBackup (unit)', () => {
   describe('Basic Behaviour', () => {
-    it('downloads the archive, unpacks it into the server dir and discards the temp file', async () => {
+    it('downloads from the backup location, unpacks and discards the temp file', async () => {
       const backup = BackupMother.create({
         id: 'b-1',
         serverId: 'srv-1',
         storageKey: 'srv-1/backup.tar.gz',
+        location: 's3',
       });
       const backupRepository = BackupRepositoryMother.create({
         getByIdForServer: mock(async () => backup),
@@ -19,16 +21,18 @@ describe('restoreBackup (unit)', () => {
       const backupStorage = BackupStorageMother.create({
         download: mock(async () => '/tmp/restore.tar.gz'),
       });
+      const backupStorages = BackupStorageResolverMother.create(backupStorage);
       const backupArchiver = BackupArchiverMother.create();
 
       await restoreBackup({
         backupRepository,
-        backupStorage,
+        backupStorages,
         backupArchiver,
         backupId: 'b-1',
         serverId: 'srv-1',
       });
 
+      expect(backupStorages.for).toHaveBeenCalledWith('s3');
       expect(backupStorage.download).toHaveBeenCalledWith(
         'srv-1/backup.tar.gz',
       );
@@ -48,12 +52,13 @@ describe('restoreBackup (unit)', () => {
         getByIdForServer: mock(async () => null),
       });
       const backupStorage = BackupStorageMother.create();
+      const backupStorages = BackupStorageResolverMother.create(backupStorage);
       const backupArchiver = BackupArchiverMother.create();
 
       await expect(
         restoreBackup({
           backupRepository,
-          backupStorage,
+          backupStorages,
           backupArchiver,
           backupId: 'missing',
           serverId: 'srv-1',
