@@ -25,15 +25,18 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       DOCKER_SOCKET: /var/run/docker.sock
       MC_DATA_PATH: /data/mc-servers
-      R2_ENDPOINT: ${R2_ENDPOINT}
-      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
-      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
-      R2_BUCKET: ${R2_BUCKET}
+      BACKUP_LOCAL_PATH: /data/mc-backups
+      # Remote backups are optional — leave R2_* unset to use local backups only.
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET: ${R2_BUCKET:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /data/mc-servers:/data/mc-servers
+      - /data/mc-backups:/data/mc-backups
     depends_on:
       postgres:
         condition: service_healthy
