@@ -1,5 +1,7 @@
-import type { BackupList } from '../domain/BackupList.js';
-import type { BackupRepository } from '../domain/BackupRepository.js';
+import type {
+  BackupListResult,
+  BackupRepository,
+} from '../domain/BackupRepository.js';
 
 interface ListBackupsProps {
   backupRepository: BackupRepository;
@@ -9,6 +11,6 @@ interface ListBackupsProps {
 export function listBackups({
   backupRepository,
   serverId,
-}: ListBackupsProps): Promise<BackupList> {
+}: ListBackupsProps): Promise<BackupListResult> {
   return backupRepository.listByServer(serverId);
 }
