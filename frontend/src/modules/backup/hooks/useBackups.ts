@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { backupFactory } from '../application/factory.js';
 import type { Backup } from '../domain/Backup.js';
+import type { BackupLocationValue } from '../domain/BackupLocation.js';
 
 export function useBackups(serverId: string) {
   const [backups, setBackups] = useState<Backup[]>([]);
+  const [cloudEnabled, setCloudEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   // 'create' while creating, or the backup id while deleting/restoring it
@@ -12,8 +14,9 @@ export function useBackups(serverId: string) {
   const fetchBackups = useCallback(async () => {
     if (!serverId) return;
     try {
-      const list = await backupFactory.listBackups(serverId);
-      setBackups(list.toArray());
+      const result = await backupFactory.listBackups(serverId);
+      setBackups(result.backups.toArray());
+      setCloudEnabled(result.cloudEnabled);
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar backups');
@@ -26,17 +29,20 @@ export function useBackups(serverId: string) {
     fetchBackups();
   }, [fetchBackups]);
 
-  const create = useCallback(async () => {
-    setActionLoading('create');
-    try {
-      await backupFactory.createBackup(serverId);
-      await fetchBackups();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear backup');
-    } finally {
-      setActionLoading(null);
-    }
-  }, [serverId, fetchBackups]);
+  const create = useCallback(
+    async (location: BackupLocationValue) => {
+      setActionLoading('create');
+      try {
+        await backupFactory.createBackup(serverId, location);
+        await fetchBackups();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al crear backup');
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [serverId, fetchBackups],
+  );
 
   const remove = useCallback(
     async (backupId: string) => {
@@ -72,6 +78,7 @@ export function useBackups(serverId: string) {
 
   return {
     backups,
+    cloudEnabled,
     loading,
     error,
     actionLoading,
