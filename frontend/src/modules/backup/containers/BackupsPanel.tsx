@@ -1,6 +1,17 @@
+import { Archive, CalendarClock, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog.js';
+import { Button } from '../../../shared/components/ui/Button.js';
+import { Card } from '../../../shared/components/ui/Card.js';
+import { Select } from '../../../shared/components/ui/Field.js';
 import { BackupList } from '../components/BackupList.js';
+import { BackupScheduleForm } from '../components/BackupScheduleForm.js';
+import {
+  BACKUP_LOCATIONS,
+  type BackupLocationValue,
+  LOCATION_LABELS,
+} from '../domain/BackupLocation.js';
+import { useBackupSchedule } from '../hooks/useBackupSchedule.js';
 import { useBackups } from '../hooks/useBackups.js';
 
 interface PendingAction {
@@ -23,9 +34,20 @@ const DIALOG = {
 };
 
 export function BackupsPanel({ serverId }: { serverId: string }) {
-  const { backups, loading, error, actionLoading, create, remove, restore } =
-    useBackups(serverId);
+  const {
+    backups,
+    cloudEnabled,
+    loading,
+    error,
+    actionLoading,
+    create,
+    remove,
+    restore,
+  } = useBackups(serverId);
+  const schedule = useBackupSchedule(serverId);
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const [createLocation, setCreateLocation] =
+    useState<BackupLocationValue>('local');
 
   async function handleConfirm() {
     if (!pending) return;
@@ -36,33 +58,82 @@ export function BackupsPanel({ serverId }: { serverId: string }) {
   }
 
   const dialog = pending ? DIALOG[pending.type] : DIALOG.delete;
+  const locations = BACKUP_LOCATIONS.filter(
+    (l) => l === 'local' || cloudEnabled,
+  );
 
   return (
-    <section className="bg-gray-800 rounded-lg border border-gray-700 p-6 mt-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-white">Backups</h2>
-        <button
-          type="button"
-          onClick={create}
-          disabled={actionLoading !== null}
-          className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {actionLoading === 'create' ? 'Creando...' : 'Crear backup'}
-        </button>
-      </div>
+    <>
+      <Card className="mt-6 p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Archive className="h-5 w-5 text-emerald-400" />
+            <h2 className="text-lg font-bold text-white">Backups</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            {cloudEnabled && (
+              <Select
+                aria-label="Destino del backup"
+                value={createLocation}
+                onChange={(e) =>
+                  setCreateLocation(e.target.value as BackupLocationValue)
+                }
+                className="h-8 w-auto py-0 text-xs"
+              >
+                {locations.map((l) => (
+                  <option key={l} value={l}>
+                    {LOCATION_LABELS[l]}
+                  </option>
+                ))}
+              </Select>
+            )}
+            <Button
+              onClick={() => create(createLocation)}
+              disabled={actionLoading !== null}
+              size="sm"
+            >
+              <Plus className="h-4 w-4" />
+              {actionLoading === 'create' ? 'Creando...' : 'Crear backup'}
+            </Button>
+          </div>
+        </div>
 
-      {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+        {error && (
+          <p className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+            {error}
+          </p>
+        )}
 
-      {loading ? (
-        <p className="text-sm text-gray-500">Cargando backups...</p>
-      ) : (
-        <BackupList
-          backups={backups}
-          actionLoading={actionLoading}
-          onRestore={(backupId) => setPending({ type: 'restore', backupId })}
-          onDelete={(backupId) => setPending({ type: 'delete', backupId })}
-        />
-      )}
+        {loading ? (
+          <p className="text-sm text-zinc-500">Cargando backups...</p>
+        ) : (
+          <BackupList
+            backups={backups}
+            actionLoading={actionLoading}
+            onRestore={(backupId) => setPending({ type: 'restore', backupId })}
+            onDelete={(backupId) => setPending({ type: 'delete', backupId })}
+          />
+        )}
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <CalendarClock className="h-5 w-5 text-emerald-400" />
+          <h2 className="text-lg font-bold text-white">Backups automáticos</h2>
+        </div>
+        {schedule.loading || schedule.schedule === null ? (
+          <p className="text-sm text-zinc-500">Cargando plan...</p>
+        ) : (
+          <BackupScheduleForm
+            schedule={schedule.schedule}
+            cloudEnabled={cloudEnabled}
+            saving={schedule.saving}
+            error={schedule.error}
+            message={schedule.message}
+            onSave={schedule.save}
+          />
+        )}
+      </Card>
 
       <ConfirmDialog
         open={pending !== null}
@@ -73,6 +144,6 @@ export function BackupsPanel({ serverId }: { serverId: string }) {
         onCancel={() => setPending(null)}
         destructive={pending?.type === 'delete'}
       />
-    </section>
+    </>
   );
 }
