@@ -1,4 +1,14 @@
+import {
+  Clock,
+  Cloud,
+  Database,
+  HardDrive,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react';
+import { Button } from '../../../shared/components/ui/Button.js';
 import type { Backup } from '../domain/Backup.js';
+import { LOCATION_LABELS } from '../domain/BackupLocation.js';
 
 interface Props {
   backups: Backup[];
@@ -31,41 +41,70 @@ export function BackupList({
   onDelete,
 }: Props) {
   if (backups.length === 0) {
-    return <p className="text-sm text-gray-500">No hay backups todavia.</p>;
+    return (
+      <p className="rounded-lg border border-dashed border-white/10 bg-zinc-950/30 px-4 py-6 text-center text-sm text-zinc-500">
+        No hay backups todavia.
+      </p>
+    );
   }
 
   return (
-    <ul className="divide-y divide-gray-700">
+    <ul className="space-y-2">
       {backups.map((backup) => {
         const id = backup.getId();
         const busy = actionLoading === id;
         return (
-          <li key={id} className="flex items-center justify-between py-3 gap-3">
-            <div className="min-w-0">
-              <p className="text-sm text-gray-200">
-                {formatDate(backup.getCreatedAt())}
-              </p>
-              <p className="text-xs text-gray-500">
-                {formatBytes(backup.getSizeBytes())}
-              </p>
+          <li
+            key={id}
+            className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-zinc-950/40 px-4 py-3"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                <Database className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 text-sm text-zinc-200">
+                  <Clock className="h-3.5 w-3.5 text-zinc-500" />
+                  {formatDate(backup.getCreatedAt())}
+                </p>
+                <p className="mt-0.5 flex items-center gap-2 text-xs text-zinc-500">
+                  <span className="inline-flex items-center gap-1">
+                    {backup.getLocation() === 's3' ? (
+                      <Cloud className="h-3 w-3" />
+                    ) : (
+                      <HardDrive className="h-3 w-3" />
+                    )}
+                    {LOCATION_LABELS[backup.getLocation()]}
+                  </span>
+                  <span>·</span>
+                  <span>{formatBytes(backup.getSizeBytes())}</span>
+                  {backup.isAuto() && (
+                    <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-emerald-400">
+                      auto
+                    </span>
+                  )}
+                </p>
+              </div>
             </div>
-            <div className="flex gap-2 shrink-0">
-              <button
-                type="button"
+            <div className="flex shrink-0 gap-2">
+              <Button
+                variant="info"
+                size="sm"
                 onClick={() => onRestore(id)}
                 disabled={actionLoading !== null}
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
+                <RotateCcw className="h-3.5 w-3.5" />
                 {busy ? '...' : 'Restaurar'}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={() => onDelete(id)}
                 disabled={actionLoading !== null}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
+                <Trash2 className="h-3.5 w-3.5" />
                 {busy ? '...' : 'Borrar'}
-              </button>
+              </Button>
             </div>
           </li>
         );
