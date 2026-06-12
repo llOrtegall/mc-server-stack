@@ -7,6 +7,8 @@ export function create(overrides: Partial<BackupPrimitives> = {}): Backup {
     id: faker.string.uuid(),
     serverId,
     storageKey: `${serverId}/backup.tar.gz`,
+    location: 'local',
+    auto: false,
     sizeBytes: faker.number.int({ min: 1024, max: 1_000_000 }),
     createdAt: faker.date.past().toISOString(),
     ...overrides,
