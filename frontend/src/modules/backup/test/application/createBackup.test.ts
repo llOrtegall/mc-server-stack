@@ -4,7 +4,7 @@ import * as BackupRepositoryMother from '../helpers/BackupRepositoryMother.js';
 
 describe('createBackup (unit)', () => {
   describe('Basic Behaviour', () => {
-    it('asks the repository to create a backup for the server', async () => {
+    it('asks the repository to create a backup at the given location', async () => {
       const backup = BackupMother.create({ serverId: 'srv-1' });
       const backupRepository = BackupRepositoryMother.create({
         create: vi.fn(async () => backup),
@@ -13,10 +13,11 @@ describe('createBackup (unit)', () => {
       const result = await createBackup({
         backupRepository,
         serverId: 'srv-1',
+        location: 'local',
       });
 
       expect(result).toBe(backup);
-      expect(backupRepository.create).toHaveBeenCalledWith('srv-1');
+      expect(backupRepository.create).toHaveBeenCalledWith('srv-1', 'local');
     });
   });
 
@@ -25,7 +26,7 @@ describe('createBackup (unit)', () => {
       const backupRepository = BackupRepositoryMother.create();
 
       await expect(
-        createBackup({ backupRepository, serverId: '' }),
+        createBackup({ backupRepository, serverId: '', location: 'local' }),
       ).rejects.toThrow('Server id must be provided');
       expect(backupRepository.create).not.toHaveBeenCalled();
     });
