@@ -1,4 +1,10 @@
 import {
+  Input,
+  Label,
+  Select,
+  Textarea,
+} from '../../../shared/components/ui/Field.js';
+import {
   DIFFICULTIES,
   GAMEMODES,
   type ServerPropertiesInput,
@@ -10,10 +16,6 @@ interface Props {
   disabled?: boolean;
   idPrefix?: string;
 }
-
-const inputClass =
-  'w-full rounded-md bg-gray-700 border border-gray-600 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500';
-const labelClass = 'block text-sm text-gray-300 mb-1';
 
 export function ServerPropertiesForm({
   value,
@@ -33,54 +35,46 @@ export function ServerPropertiesForm({
   }
 
   return (
-    <fieldset disabled={disabled} className="space-y-3 border-0 p-0 m-0">
-      <legend className="text-sm font-medium text-gray-200 mb-1">
+    <fieldset disabled={disabled} className="m-0 space-y-4 border-0 p-0">
+      <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
         Propiedades de Minecraft
       </legend>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor={`${idPrefix}-difficulty`} className={labelClass}>
-            Dificultad
-          </label>
-          <select
+          <Label htmlFor={`${idPrefix}-difficulty`}>Dificultad</Label>
+          <Select
             id={`${idPrefix}-difficulty`}
             value={value.difficulty ?? 'easy'}
             onChange={(e) => set('difficulty', e.target.value as never)}
-            className={inputClass}
           >
             {DIFFICULTIES.map((d) => (
               <option key={d} value={d}>
                 {d}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
-          <label htmlFor={`${idPrefix}-gamemode`} className={labelClass}>
-            Modo de juego
-          </label>
-          <select
+          <Label htmlFor={`${idPrefix}-gamemode`}>Modo de juego</Label>
+          <Select
             id={`${idPrefix}-gamemode`}
             value={value.gamemode ?? 'survival'}
             onChange={(e) => set('gamemode', e.target.value as never)}
-            className={inputClass}
           >
             {GAMEMODES.map((g) => (
               <option key={g} value={g}>
                 {g}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor={`${idPrefix}-maxPlayers`} className={labelClass}>
-            Máx. jugadores
-          </label>
-          <input
+          <Label htmlFor={`${idPrefix}-maxPlayers`}>Máx. jugadores</Label>
+          <Input
             id={`${idPrefix}-maxPlayers`}
             type="number"
             min={1}
@@ -90,14 +84,13 @@ export function ServerPropertiesForm({
               set('maxPlayers', numberOrUndefined(e.target.value))
             }
             placeholder="20"
-            className={inputClass}
           />
         </div>
         <div>
-          <label htmlFor={`${idPrefix}-viewDistance`} className={labelClass}>
+          <Label htmlFor={`${idPrefix}-viewDistance`}>
             Distancia de visión
-          </label>
-          <input
+          </Label>
+          <Input
             id={`${idPrefix}-viewDistance`}
             type="number"
             min={3}
@@ -107,36 +100,29 @@ export function ServerPropertiesForm({
               set('viewDistance', numberOrUndefined(e.target.value))
             }
             placeholder="10"
-            className={inputClass}
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor={`${idPrefix}-motd`} className={labelClass}>
-          MOTD
-        </label>
-        <input
+        <Label htmlFor={`${idPrefix}-motd`}>MOTD</Label>
+        <Input
           id={`${idPrefix}-motd`}
           maxLength={150}
           value={value.motd ?? ''}
           onChange={(e) => set('motd', e.target.value)}
           placeholder="A Minecraft Server"
-          className={inputClass}
         />
       </div>
 
       <div>
-        <label htmlFor={`${idPrefix}-seed`} className={labelClass}>
-          Semilla (seed)
-        </label>
-        <input
+        <Label htmlFor={`${idPrefix}-seed`}>Semilla (seed)</Label>
+        <Input
           id={`${idPrefix}-seed`}
           maxLength={100}
           value={value.seed ?? ''}
           onChange={(e) => set('seed', e.target.value)}
           placeholder="aleatoria"
-          className={inputClass}
         />
       </div>
 
@@ -168,10 +154,10 @@ export function ServerPropertiesForm({
       </div>
 
       <div>
-        <label htmlFor={`${idPrefix}-whitelist`} className={labelClass}>
+        <Label htmlFor={`${idPrefix}-whitelist`}>
           Whitelist (un usuario por línea)
-        </label>
-        <textarea
+        </Label>
+        <Textarea
           id={`${idPrefix}-whitelist`}
           rows={3}
           value={(value.whitelist ?? []).join('\n')}
@@ -185,7 +171,6 @@ export function ServerPropertiesForm({
             )
           }
           placeholder="Notch&#10;jeb_"
-          className={inputClass}
         />
       </div>
     </fieldset>
@@ -206,14 +191,14 @@ function Checkbox({
   return (
     <label
       htmlFor={id}
-      className="flex items-center gap-2 text-sm text-gray-300"
+      className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-white/10 bg-zinc-950/40 px-3 py-2 text-sm text-zinc-300 transition-colors hover:border-white/20"
     >
       <input
         id={id}
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-green-600 focus:ring-green-500"
+        className="h-4 w-4 rounded border-white/20 bg-zinc-800 text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
       />
       {label}
     </label>
