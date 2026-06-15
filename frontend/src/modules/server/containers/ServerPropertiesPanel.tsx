@@ -1,4 +1,7 @@
+import { AlertTriangle, Save, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '../../../shared/components/ui/Button.js';
+import { Card } from '../../../shared/components/ui/Card.js';
 import { serverFactory } from '../application/factory.js';
 import { ServerPropertiesForm } from '../components/ServerPropertiesForm.js';
 import type { Server } from '../domain/Server.js';
@@ -37,12 +40,18 @@ export function ServerPropertiesPanel({ server, onUpdated }: Props) {
   }
 
   return (
-    <section
+    <Card
       aria-label="Propiedades del servidor"
-      className="mt-6 bg-gray-800 rounded-lg border border-gray-700 p-6"
+      className="mt-6 p-6"
+      role="region"
     >
-      <h2 className="text-lg font-bold text-white mb-2">Propiedades</h2>
-      <p className="text-xs text-yellow-400 mb-4">
+      <div className="mb-4 flex items-center gap-2">
+        <SlidersHorizontal className="h-5 w-5 text-emerald-400" />
+        <h2 className="text-lg font-bold text-white">Propiedades</h2>
+      </div>
+
+      <p className="mb-5 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
         Guardar recrea el contenedor: el servidor se detiene y arranca con las
         nuevas propiedades. Los datos del mundo se conservan.
       </p>
@@ -54,17 +63,21 @@ export function ServerPropertiesPanel({ server, onUpdated }: Props) {
         idPrefix="edit"
       />
 
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-      {message && <p className="mt-3 text-sm text-green-400">{message}</p>}
+      {error && (
+        <p className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className="mt-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">
+          {message}
+        </p>
+      )}
 
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saving}
-        className="mt-4 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
-      >
+      <Button onClick={handleSave} disabled={saving} className="mt-4">
+        <Save className="h-4 w-4" />
         {saving ? 'Guardando...' : 'Guardar propiedades'}
-      </button>
-    </section>
+      </Button>
+    </Card>
   );
 }
