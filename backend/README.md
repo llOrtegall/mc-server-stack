@@ -15,7 +15,7 @@ REST API para gestionar servidores de Minecraft usando Docker. Inspirado en Ater
 - [Bun](https://bun.sh) >= 1.3
 - Docker (con socket en `/var/run/docker.sock`)
 - PostgreSQL
-- Bucket en Cloudflare R2 o AWS S3
+- (Opcional) Bucket en Cloudflare R2 o AWS S3 — solo para backups en la nube
 
 ---
 
@@ -44,12 +44,18 @@ Al arrancar por primera vez:
 | `JWT_EXPIRES_IN` | Expiración del token | `7d` |
 | `DOCKER_SOCKET` | Ruta al socket de Docker | `/var/run/docker.sock` |
 | `MC_DATA_PATH` | Directorio host donde se guardan los datos de cada servidor | `/data/mc-servers` |
-| `R2_ENDPOINT` | Endpoint de Cloudflare R2 o S3 | `https://<id>.r2.cloudflarestorage.com` |
-| `R2_ACCESS_KEY_ID` | Access Key de R2/S3 | |
-| `R2_SECRET_ACCESS_KEY` | Secret Key de R2/S3 | |
-| `R2_BUCKET` | Nombre del bucket de backups | `mc-backups` |
+| `BACKUP_LOCAL_PATH` | Directorio host (volumen) para backups locales | `/data/mc-backups` |
+| `R2_ENDPOINT` | Endpoint de Cloudflare R2 o S3 *(opcional)* | `https://<id>.r2.cloudflarestorage.com` |
+| `R2_ACCESS_KEY_ID` | Access Key de R2/S3 *(opcional)* | |
+| `R2_SECRET_ACCESS_KEY` | Secret Key de R2/S3 *(opcional)* | |
+| `R2_BUCKET` | Nombre del bucket de backups *(opcional)* | `mc-backups` |
 | `ADMIN_EMAIL` | Email del admin inicial | `admin@minecraft.local` |
 | `ADMIN_PASSWORD` | Contraseña del admin inicial | `changeme123` |
+
+> **Backups en la nube son opcionales.** Si no defines los cuatro `R2_*`, los
+> backups en la nube quedan deshabilitados (`cloudEnabled: false`) y solo se usa
+> el almacenamiento **local** (`BACKUP_LOCAL_PATH`). Requisito mínimo: ninguno de
+> R2 — un bucket R2/S3 solo hace falta si quieres backups offsite.
 
 ---
 
@@ -95,6 +101,16 @@ Retorna la información del admin autenticado.
 
 ---
 
+### Sistema `/api/system` 🔒
+
+#### `GET /api/system/resources`
+Retorna la capacidad del host (CPU y RAM) consultando el daemon Docker
+(`docker.info()`). Sirve para acotar `cpuLimit`/`ramMb` al crear servidores.
+
+**Response:** `{ "cpuCores": 16, "memoryMb": 15618 }`
+
+---
+
 ### Servidores `/api/servers` 🔒
 
 #### `GET /api/servers`
@@ -114,7 +130,8 @@ Crea un nuevo servidor Minecraft y su contenedor Docker.
   "version": "1.21.4",
   "port": 25565,
   "ramMb": 2048,
-  "cpuLimit": 2.0
+  "cpuLimit": 2.0,
+  "properties": { "difficulty": "hard", "gamemode": "survival", "maxPlayers": 20 }
 }
 ```
 
@@ -125,8 +142,15 @@ Crea un nuevo servidor Minecraft y su contenedor Docker.
 | `port` | number (1024–65534) | ✅ | — |
 | `ramMb` | number (512–16384) | ❌ | `1024` |
 | `cpuLimit` | number (0.1–8) | ❌ | `1.0` |
+| `properties` | objeto (ver abajo) | ❌ | defaults de Minecraft |
 
 > El puerto RCON se asigna automáticamente como `port + 1`.
+>
+> **`properties`** (todas opcionales, subset curado de `server.properties`):
+> `difficulty` (`peaceful\|easy\|normal\|hard`), `gamemode`
+> (`survival\|creative\|adventure\|spectator`), `maxPlayers` (1–1000), `motd`,
+> `pvp`, `seed`, `hardcore`, `onlineMode`, `viewDistance` (3–32),
+> `whitelistEnabled`, `whitelist` (string[]).
 
 **Response:** `201 Server`
 
@@ -134,6 +158,17 @@ Crea un nuevo servidor Minecraft y su contenedor Docker.
 
 #### `GET /api/servers/:id`
 Retorna el detalle de un servidor.
+
+---
+
+#### `PATCH /api/servers/:id`
+Actualiza las `properties` del servidor. Como `itzg` fija el env al crear el
+contenedor, esto **recrea el contenedor** para aplicar los cambios (los datos del
+mundo se conservan por el bind mount; el servidor queda `stopped`).
+
+**Body:** `{ "properties": { "difficulty": "peaceful", "pvp": false } }`
+
+**Response:** `200 Server`
 
 ---
 
@@ -209,32 +244,66 @@ ws.onmessage = (e) => console.log(e.data)
 ### Backups `/api/servers/:id/backups` 🔒
 
 #### `GET /api/servers/:id/backups`
-Lista todos los backups del servidor.
+Lista todos los backups del servidor + si la nube está disponible.
 
-**Response:** `Backup[]`
+**Response:** `{ "backups": Backup[], "cloudEnabled": boolean }`
 
 ---
 
 #### `POST /api/servers/:id/backups`
-Crea un backup: comprime el directorio de datos del servidor y lo sube a R2/S3.
+Crea un backup: comprime (gzip) el directorio de datos del servidor y lo guarda en
+el destino elegido. Si el servidor está `running`, hace `save-off`/`save-all flush`
+por RCON antes de archivar (snapshot consistente).
+
+**Body:** `{ "location": "local" }` — `local` (default) o `s3` (solo si la nube está configurada).
 
 **Response:** `201 Backup`
 
 ---
 
 #### `DELETE /api/servers/:id/backups/:backupId`
-Elimina un backup de R2/S3 y de la base de datos.
+Elimina un backup de su almacenamiento (local o nube) y de la base de datos.
 
 **Response:** `204 No Content`
 
 ---
 
 #### `POST /api/servers/:id/backups/:backupId/restore`
-Restaura un backup: descarga el archivo de R2/S3 y reemplaza los datos del servidor.
+Restaura un backup: lo descarga desde su `location` y reemplaza los datos del servidor.
 
 > El servidor debe estar detenido antes de restaurar.
 
 **Response:** `204 No Content`
+
+---
+
+#### `GET /api/servers/:id/backups/schedule`
+Retorna el plan de backups automáticos del servidor (o un default deshabilitado).
+
+**Response:** `{ ...BackupSchedule, "cloudEnabled": boolean }`
+
+---
+
+#### `PUT /api/servers/:id/backups/schedule`
+Crea/actualiza el plan de backups automáticos.
+
+**Body:**
+```json
+{ "enabled": true, "frequency": "daily", "retention": 7, "location": "local" }
+```
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| `enabled` | boolean | activa/desactiva el plan |
+| `frequency` | `hourly\|every6h\|daily\|weekly` | preset de frecuencia |
+| `retention` | number (1–50) | nº de backups **automáticos** a conservar (poda el resto) |
+| `location` | `local\|s3` | destino (s3 solo si la nube está configurada) |
+
+> Un `BackupScheduler` (intervalo de 60s) ejecuta los planes vencidos, poda los
+> automáticos sobrantes y registra `lastRunAt`. Los backups **manuales** nunca se
+> podan automáticamente.
+
+**Response:** `200 { ...BackupSchedule, "cloudEnabled": boolean }`
 
 ---
 
@@ -256,6 +325,19 @@ El contrato de la API es **camelCase**. Las columnas de la base de datos siguen
   status: "stopped" | "starting" | "running" | "stopping" | "error"
   ramMb: number
   cpuLimit: number
+  properties: {        // subset curado de server.properties (JSONB)
+    difficulty: "peaceful" | "easy" | "normal" | "hard"
+    gamemode: "survival" | "creative" | "adventure" | "spectator"
+    maxPlayers: number
+    motd: string
+    pvp: boolean
+    seed: string
+    hardcore: boolean
+    onlineMode: boolean
+    viewDistance: number
+    whitelistEnabled: boolean
+    whitelist: string[]
+  }
   createdAt: string
   updatedAt: string
 }
@@ -269,9 +351,24 @@ El contrato de la API es **camelCase**. Las columnas de la base de datos siguen
 {
   id: string
   serverId: string
-  storageKey: string  // clave del objeto en R2/S3
+  storageKey: string          // clave del objeto en su almacenamiento
+  location: "local" | "s3"    // dónde vive el archivo
+  auto: boolean               // creado por el scheduler
   sizeBytes: number | null
   createdAt: string
+}
+```
+
+### BackupSchedule
+
+```ts
+{
+  serverId: string
+  enabled: boolean
+  frequency: "hourly" | "every6h" | "daily" | "weekly"
+  retention: number           // backups automáticos a conservar
+  location: "local" | "s3"
+  lastRunAt: string | null
 }
 ```
 
@@ -285,10 +382,11 @@ dependencias apuntan siempre hacia el dominio.
 ```
 src/
 ├── modules/
-│   ├── server/        # CRUD + control Docker (entidad Server, ServerStatus, ...)
+│   ├── server/        # CRUD + control Docker + properties (Server, ServerProperties, ...)
 │   ├── auth/          # Login + JWT (Admin, Email, PasswordHash)
-│   ├── backup/        # Backups en R2/S3 (Backup, StorageKey)
-│   └── console/       # Logs HTTP + RCON + WebSocket
+│   ├── backup/        # Backups local/R2 + scheduler (Backup, BackupSchedule, BackupScheduler)
+│   ├── console/       # Logs HTTP + RCON + WebSocket
+│   └── system/        # Recursos del host (HostResources vía docker.info)
 │       ├── domain/          # entidades, value objects, puertos (interfaces)
 │       ├── application/     # casos de uso + factory
 │       ├── infrastructure/  # adaptadores (Postgres, S3, Docker, RCON, WS)
