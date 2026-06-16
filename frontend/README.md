@@ -2,7 +2,10 @@
 
 Dashboard web para gestionar servidores de Minecraft. Consume la API del backend.
 
-**Stack:** React 19 · TypeScript · Vite · React Router 7 · Tailwind CSS v4 · Vitest + Testing Library
+**Stack:** React 19 · TypeScript · Vite · React Router 7 · Tailwind CSS v4 · lucide-react · Vitest + Testing Library
+
+> **UI:** tema oscuro "glass" sobre Tailwind v4 con primitivos propios en
+> `shared/components/ui/` (`Button`, `Card`, `Field`) e iconos `lucide-react`.
 
 > Arquitectura DDD / Clean Architecture, espejo del backend: cada feature es un
 > módulo con capas `domain → application → infrastructure` + UI
@@ -36,10 +39,11 @@ bun run test:watch   # vitest en modo watch
 ```
 src/
 ├── modules/
-│   ├── server/        # listado, detalle, crear, start/stop/restart/delete
+│   ├── server/        # listado, detalle, crear (+ propiedades MC), editar props, acciones
 │   ├── auth/          # login, sesión (AuthContext), ProtectedRoute
-│   ├── backup/        # crear / restaurar / borrar backups
-│   └── console/       # logs + comando + stream en vivo (WebSocket)
+│   ├── backup/        # crear (local/nube) / restaurar / borrar + plan automático
+│   ├── console/       # logs + comando + stream en vivo (WebSocket)
+│   └── system/        # capacidad del host (HostCapacityCard, useHostResources)
 │       ├── domain/          # entidades, value objects, puertos (interfaces)
 │       ├── application/     # casos de uso + factory
 │       ├── infrastructure/  # HttpXRepository sobre apiFetch
@@ -48,6 +52,8 @@ src/
 │       ├── containers/      # orquestan hooks + estado, eligen qué renderizar
 │       └── test/            # mothers + tests
 ├── shared/components/  # UI genérica (Layout, Spinner, ConfirmDialog, NotFound)
+│   └── ui/             # primitivos del design-system (Button, Card, Field)
+├── shared/lib/cn.ts    # helper de classnames (sin dependencias)
 ├── api/client.ts       # apiFetch: añade el bearer token y redirige a /login en 401
 ├── test/setup.ts       # setup de Vitest (jest-dom + stub scrollIntoView)
 └── main.tsx            # router + providers
