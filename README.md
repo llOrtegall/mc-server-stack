@@ -4,14 +4,17 @@ Una plataforma completa para gestionar servidores de Minecraft usando Docker. In
 
 ## 🚀 Características
 
-- **Gestión de Servidores**: Crear, iniciar, detener y eliminar servidores de Minecraft
+- **Gestión de Servidores**: Crear, iniciar, detener, eliminar y editar servidores de Minecraft
+- **Propiedades de Minecraft**: Configura `server.properties` (dificultad, modo, max jugadores, MOTD, PvP, seed, whitelist, ...) al crear o editar
+- **Backups**: Local (volumen) o nube (Cloudflare R2 / AWS S3) — destino por backup, con compresión gzip
+- **Backups Automáticos**: Planes programados por servidor (cada hora / 6h / diario / semanal) con retención y poda automática
 - **Consola en Tiempo Real**: Acceso a la consola del servidor vía WebSocket
-- **Backups Automáticos**: Respaldos a Cloudflare R2 o AWS S3
-- **Autenticación**: Sistema de usuarios con JWT
-- **Interfaz Web Moderna**: Dashboard responsivo con React y Tailwind CSS
+- **Capacidad del Host**: Muestra cores/RAM disponibles para acotar los recursos al crear
+- **Autenticación**: Admin único con JWT
+- **Interfaz Web Moderna**: Dashboard "glass" oscuro con React y Tailwind CSS v4
 - **API REST**: Backend completo con documentación
 - **Docker Nativo**: Servidores corriendo en contenedores Docker
-- **Watchdog**: Monitoreo automático del estado de los servidores
+- **Watchdog**: Auto-apagado de servidores inactivos
 
 ## 🛠️ Stack Tecnológico
 
@@ -29,7 +32,8 @@ Una plataforma completa para gestionar servidores de Minecraft usando Docker. In
 - **React 19** - Framework UI
 - **TypeScript** - Tipado estático
 - **Vite** - Build tool
-- **Tailwind CSS** - Estilos
+- **Tailwind CSS v4** - Estilos (tema oscuro "glass")
+- **lucide-react** - Iconos
 - **React Router** - Enrutamiento
 
 ### DevOps
@@ -43,7 +47,7 @@ Una plataforma completa para gestionar servidores de Minecraft usando Docker. In
 - [Docker](https://docker.com) con socket accesible
 - [Docker Compose](https://docs.docker.com/compose/)
 - PostgreSQL (o usar la imagen incluida)
-- Bucket en Cloudflare R2 o AWS S3 para backups
+- (Opcional) Bucket en Cloudflare R2 o AWS S3 — solo si quieres backups en la nube
 
 ## 🚀 Instalación y Configuración
 
@@ -82,8 +86,9 @@ JWT_EXPIRES_IN=7d
 
 # Docker
 MC_DATA_PATH=/data/mc-servers
+BACKUP_LOCAL_PATH=/data/mc-backups
 
-# R2/S3 Backups
+# R2/S3 Backups (OPCIONAL — déjalos vacíos para usar solo backups locales)
 R2_ENDPOINT=https://<tu-id>.r2.cloudflarestorage.com
 R2_ACCESS_KEY_ID=tu_access_key
 R2_SECRET_ACCESS_KEY=tu_secret_key
@@ -164,26 +169,36 @@ bun run test
 
 La API está disponible en `http://localhost:3000/api`
 
+> Documentación completa (body, respuestas, modelo de datos) en
+> [`backend/README.md`](backend/README.md).
+
 #### Autenticación
-- `POST /api/auth/login` - Iniciar sesión
-- `POST /api/auth/register` - Registrar usuario
+- `POST /api/auth/login` - Iniciar sesión (no hay registro: modelo de admin único)
+- `GET /api/auth/me` - Admin autenticado
+
+#### Sistema
+- `GET /api/system/resources` - Capacidad del host (cores / RAM)
 
 #### Servidores
 - `GET /api/servers` - Listar servidores
-- `POST /api/servers` - Crear servidor
+- `POST /api/servers` - Crear servidor (incluye `properties` de Minecraft)
 - `GET /api/servers/:id` - Detalles del servidor
-- `PUT /api/servers/:id` - Actualizar servidor
+- `PATCH /api/servers/:id` - Editar `properties` (recrea el contenedor)
 - `DELETE /api/servers/:id` - Eliminar servidor
-- `POST /api/servers/:id/start` - Iniciar servidor
-- `POST /api/servers/:id/stop` - Detener servidor
+- `POST /api/servers/:id/start|stop|restart` - Control del servidor
 
 #### Consola
-- `WebSocket /ws/servers/:id?token=JWT` - Conexión WebSocket para consola
+- `GET /api/servers/:id/console/logs` - Últimas líneas de log
+- `POST /api/servers/:id/console/command` - Comando vía RCON
+- `WebSocket /ws/servers/:id?token=JWT` - Logs en tiempo real
 
 #### Backups
-- `GET /api/servers/:id/backups` - Listar backups
-- `POST /api/servers/:id/backups` - Crear backup
+- `GET /api/servers/:id/backups` - Listar backups (+ `cloudEnabled`)
+- `POST /api/servers/:id/backups` - Crear backup (`{ location: "local" | "s3" }`)
+- `DELETE /api/servers/:id/backups/:backupId` - Borrar backup
 - `POST /api/servers/:id/backups/:backupId/restore` - Restaurar backup
+- `GET /api/servers/:id/backups/schedule` - Plan de backups automáticos
+- `PUT /api/servers/:id/backups/schedule` - Configurar backups automáticos
 
 ## 🐳 Despliegue
 
