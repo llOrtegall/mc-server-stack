@@ -51,6 +51,43 @@ describe('createServer (unit)', () => {
       const provisioned = provision.mock.calls[0]?.[0];
       expect(provisioned?.toPrimitive().rconPort).toBe(30001);
     });
+
+    it('provisions a bedrock server defaulting its version to LATEST', async () => {
+      const serverRepository = ServerRepositoryMother.create({
+        create: mock(async (server) => server.withId('srv-bedrock')),
+      });
+      const provision = mock(async (_server: Server) => 'c-bedrock');
+      const serverRuntime = ServerRuntimeMother.create({ provision });
+
+      await createServer({
+        serverRepository,
+        serverRuntime,
+        name: 'Bedrock Srv',
+        edition: 'bedrock',
+        port: 19132,
+      });
+
+      const provisioned = provision.mock.calls[0]?.[0]?.toPrimitive();
+      expect(provisioned?.edition).toBe('bedrock');
+      expect(provisioned?.version).toBe('LATEST');
+    });
+
+    it('defaults the edition to java', async () => {
+      const serverRepository = ServerRepositoryMother.create({
+        create: mock(async (server) => server.withId('srv-java')),
+      });
+      const provision = mock(async (_server: Server) => 'c-java');
+      const serverRuntime = ServerRuntimeMother.create({ provision });
+
+      await createServer({
+        serverRepository,
+        serverRuntime,
+        name: 'Java Srv',
+        port: 25565,
+      });
+
+      expect(provision.mock.calls[0]?.[0]?.toPrimitive().edition).toBe('java');
+    });
   });
 
   describe('Error Scenarios', () => {

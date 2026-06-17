@@ -7,6 +7,7 @@ interface CreateServerProps {
   serverRepository: ServerRepository;
   serverRuntime: ServerRuntime;
   name: string;
+  edition?: string | null;
   version?: string | null;
   port: number;
   ramMb?: number | null;
@@ -18,6 +19,7 @@ export async function createServer({
   serverRepository,
   serverRuntime,
   name,
+  edition,
   version,
   port,
   ramMb,
@@ -26,6 +28,7 @@ export async function createServer({
 }: CreateServerProps): Promise<Server> {
   const server = Server.provisionNew({
     name,
+    edition,
     version,
     port,
     ramMb,

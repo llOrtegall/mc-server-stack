@@ -17,6 +17,7 @@ const activityTracker = new WatchdogServerActivityTracker();
 
 interface CreateServerInput {
   name: string;
+  edition?: string | null;
   version?: string | null;
   port: number;
   ramMb?: number | null;
