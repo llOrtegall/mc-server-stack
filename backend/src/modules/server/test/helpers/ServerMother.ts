@@ -4,6 +4,7 @@ import { Port } from '../../domain/Port.js';
 import { RamMb } from '../../domain/RamMb.js';
 import { RconPassword } from '../../domain/RconPassword.js';
 import { Server } from '../../domain/Server.js';
+import { ServerEdition } from '../../domain/ServerEdition.js';
 import { ServerName } from '../../domain/ServerName.js';
 import {
   ServerProperties,
@@ -18,6 +19,7 @@ import { Version } from '../../domain/Version.js';
 interface ServerOverrides {
   id?: string | null;
   name?: string;
+  edition?: string;
   version?: string;
   port?: number;
   rconPort?: number;
@@ -34,6 +36,7 @@ export function create(overrides: ServerOverrides = {}): Server {
   return Server.create({
     id: overrides.id === undefined ? faker.string.uuid() : overrides.id,
     name: ServerName.create(overrides.name ?? faker.lorem.words(2)),
+    edition: ServerEdition.create(overrides.edition),
     version: Version.create(overrides.version),
     port: Port.create(port),
     rconPort: Port.create(overrides.rconPort ?? port + 1),

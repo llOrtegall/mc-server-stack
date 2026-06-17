@@ -2,6 +2,7 @@ import { CpuLimit } from './CpuLimit.js';
 import { Port } from './Port.js';
 import { RamMb } from './RamMb.js';
 import { RconPassword } from './RconPassword.js';
+import { ServerEdition } from './ServerEdition.js';
 import { ServerName } from './ServerName.js';
 import {
   ServerProperties,
@@ -14,6 +15,7 @@ import { Version } from './Version.js';
 export interface ServerPrimitives {
   id: string | null;
   name: string;
+  edition: string;
   version: string;
   port: number;
   rconPort: number;
@@ -31,6 +33,7 @@ export class Server {
   private constructor(
     private readonly id: string | null,
     private readonly name: ServerName,
+    private readonly edition: ServerEdition,
     private readonly version: Version,
     private readonly port: Port,
     private readonly rconPort: Port,
@@ -47,6 +50,7 @@ export class Server {
   static create(props: {
     id: string | null;
     name: ServerName;
+    edition: ServerEdition;
     version: Version;
     port: Port;
     rconPort: Port;
@@ -62,6 +66,7 @@ export class Server {
     return new Server(
       props.id,
       props.name,
+      props.edition,
       props.version,
       props.port,
       props.rconPort,
@@ -83,6 +88,7 @@ export class Server {
    */
   static provisionNew(input: {
     name: string;
+    edition?: string | null;
     version?: string | null;
     port: number;
     ramMb?: number | null;
@@ -90,10 +96,16 @@ export class Server {
     properties?: ServerPropertiesInput | null;
   }): Server {
     const port = Port.create(input.port);
+    const edition = ServerEdition.create(input.edition);
+    // itzg's Bedrock image versions differently from Java; default it to LATEST
+    // (Java keeps its own default in the Version VO) when none is supplied.
+    const version =
+      input.version ?? (edition.isBedrock() ? 'LATEST' : undefined);
     return Server.create({
       id: null,
       name: ServerName.create(input.name),
-      version: Version.create(input.version),
+      edition,
+      version: Version.create(version),
       port,
       rconPort: port.next(),
       rconPassword: RconPassword.generate(),
@@ -110,6 +122,7 @@ export class Server {
     return Server.create({
       id: data.id,
       name: ServerName.fromPrimitive(data.name),
+      edition: ServerEdition.fromPrimitive(data.edition),
       version: Version.fromPrimitive(data.version),
       port: Port.fromPrimitive(data.port),
       rconPort: Port.fromPrimitive(data.rconPort),
@@ -132,6 +145,10 @@ export class Server {
     return this.containerId;
   }
 
+  getEdition(): ServerEdition {
+    return this.edition;
+  }
+
   withId(id: string): Server {
     return Server.create({ ...this.props(), id });
   }
@@ -152,6 +169,7 @@ export class Server {
     return {
       id: this.id,
       name: this.name,
+      edition: this.edition,
       version: this.version,
       port: this.port,
       rconPort: this.rconPort,
@@ -174,6 +192,7 @@ export class Server {
     return {
       id: this.id,
       name: this.name.toPrimitive(),
+      edition: this.edition.toPrimitive(),
       version: this.version.toPrimitive(),
       port: this.port.toPrimitive(),
       rconPort: this.rconPort.toPrimitive(),
