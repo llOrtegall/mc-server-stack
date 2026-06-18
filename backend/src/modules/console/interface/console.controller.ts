@@ -6,6 +6,8 @@ import { consoleFactory } from '../application/factory.js';
 function toAppError(err: unknown): unknown {
   if (err instanceof AppError) return err;
   if (err instanceof Error) {
+    if (err.message.includes('not supported on Bedrock'))
+      return new AppError(400, 'Console commands are not supported on Bedrock');
     if (err.message.includes('not running'))
       return new AppError(400, 'Server is not running');
     if (err.message.includes('not found') || err.message.includes('container'))

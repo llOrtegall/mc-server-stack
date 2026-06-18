@@ -18,6 +18,11 @@ export async function sendCommand({
 
   const server = await consoleServerRepository.findById(serverId);
   if (server === null) throw new Error('[sendCommand] Server not found');
+  if (server.edition === 'bedrock') {
+    throw new Error(
+      '[sendCommand] Console commands are not supported on Bedrock servers',
+    );
+  }
   if (server.status !== 'running')
     throw new Error('[sendCommand] Server is not running');
 

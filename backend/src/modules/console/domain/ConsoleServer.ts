@@ -5,6 +5,7 @@
  */
 export interface ConsoleServer {
   containerId: string | null;
+  edition: string;
   rconPort: number;
   rconPassword: string;
   status: string;

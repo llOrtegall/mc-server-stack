@@ -67,6 +67,28 @@ describe('sendCommand (unit)', () => {
       expect(consoleGateway.sendCommand).not.toHaveBeenCalled();
     });
 
+    it('rejects commands on a bedrock server (no RCON)', async () => {
+      const consoleServerRepository = ConsoleServerRepositoryMother.create({
+        findById: mock(async () =>
+          ConsoleServerRepositoryMother.consoleServer({
+            edition: 'bedrock',
+            status: 'running',
+          }),
+        ),
+      });
+      const consoleGateway = ConsoleGatewayMother.create();
+
+      await expect(
+        sendCommand({
+          consoleServerRepository,
+          consoleGateway,
+          serverId: 'srv-bedrock',
+          command: 'list',
+        }),
+      ).rejects.toThrow('not supported on Bedrock');
+      expect(consoleGateway.sendCommand).not.toHaveBeenCalled();
+    });
+
     it('throws when the server is not running', async () => {
       const consoleServerRepository = ConsoleServerRepositoryMother.create({
         findById: mock(async () =>

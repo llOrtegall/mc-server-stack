@@ -8,6 +8,7 @@ export class PostgresConsoleServerRepository
   async findById(serverId: string): Promise<ConsoleServer | null> {
     const result = await pool.query<ConsoleServer>(
       `SELECT container_id AS "containerId",
+              edition,
               rcon_port AS "rconPort",
               rcon_password AS "rconPassword",
               status

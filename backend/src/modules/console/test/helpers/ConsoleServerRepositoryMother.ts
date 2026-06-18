@@ -8,6 +8,7 @@ export function consoleServer(
 ): ConsoleServer {
   return {
     containerId: faker.string.alphanumeric(12),
+    edition: 'java',
     rconPort: faker.number.int({ min: 1025, max: 65000 }),
     rconPassword: faker.string.hexadecimal({ length: 16, prefix: '' }),
     status: 'running',
