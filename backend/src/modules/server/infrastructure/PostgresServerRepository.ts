@@ -5,6 +5,7 @@ import type { ServerRepository } from '../domain/ServerRepository.js';
 
 const COLUMNS = `id,
   name,
+  edition,
   version,
   port,
   rcon_port AS "rconPort",
@@ -34,11 +35,12 @@ export class PostgresServerRepository implements ServerRepository {
   async create(server: Server): Promise<Server> {
     const data = server.toPrimitive();
     const result = await pool.query<ServerRow>(
-      `INSERT INTO servers (name, version, port, rcon_port, rcon_password, ram_mb, cpu_limit, status, properties)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO servers (name, edition, version, port, rcon_port, rcon_password, ram_mb, cpu_limit, status, properties)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING ${COLUMNS}`,
       [
         data.name,
+        data.edition,
         data.version,
         data.port,
         data.rconPort,
@@ -75,13 +77,14 @@ export class PostgresServerRepository implements ServerRepository {
     const data = server.toPrimitive();
     const result = await pool.query<ServerRow>(
       `UPDATE servers
-       SET name = $1, version = $2, port = $3, rcon_port = $4, rcon_password = $5,
-           container_id = $6, status = $7, ram_mb = $8, cpu_limit = $9,
-           properties = $10, updated_at = NOW()
-       WHERE id = $11
+       SET name = $1, edition = $2, version = $3, port = $4, rcon_port = $5, rcon_password = $6,
+           container_id = $7, status = $8, ram_mb = $9, cpu_limit = $10,
+           properties = $11, updated_at = NOW()
+       WHERE id = $12
        RETURNING ${COLUMNS}`,
       [
         data.name,
+        data.edition,
         data.version,
         data.port,
         data.rconPort,

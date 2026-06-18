@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS admins (
 CREATE TABLE IF NOT EXISTS servers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(100) NOT NULL,
+  edition VARCHAR(20) NOT NULL DEFAULT 'java',
   version VARCHAR(20) NOT NULL DEFAULT '1.21.4',
   port INTEGER NOT NULL UNIQUE,
   rcon_port INTEGER NOT NULL UNIQUE,
@@ -26,6 +27,10 @@ CREATE TABLE IF NOT EXISTS servers (
 -- Idempotent upgrade for servers tables created before the properties column existed.
 ALTER TABLE servers
   ADD COLUMN IF NOT EXISTS properties JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+-- Idempotent upgrade for servers tables created before the edition column existed.
+ALTER TABLE servers
+  ADD COLUMN IF NOT EXISTS edition VARCHAR(20) NOT NULL DEFAULT 'java';
 
 CREATE TABLE IF NOT EXISTS backups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
