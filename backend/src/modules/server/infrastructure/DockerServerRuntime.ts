@@ -13,6 +13,7 @@ export class DockerServerRuntime implements ServerRuntime {
     return dockerService.createContainer({
       id: data.id,
       name: data.name,
+      edition: data.edition,
       version: data.version,
       port: data.port,
       rconPort: data.rconPort,

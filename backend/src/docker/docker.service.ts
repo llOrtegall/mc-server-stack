@@ -5,9 +5,14 @@ import type { ServerPropertiesPrimitives } from '../modules/server/domain/Server
 
 export const docker = new Docker({ socketPath: config.dockerSocket });
 
+const JAVA_IMAGE = 'itzg/minecraft-server';
+const BEDROCK_IMAGE = 'itzg/minecraft-bedrock-server';
+const BEDROCK_PORT = 19132; // fixed UDP port inside the Bedrock container
+
 export interface ContainerOptions {
   id: string;
   name: string;
+  edition: string;
   version: string;
   port: number;
   rconPort: number;
@@ -17,8 +22,8 @@ export interface ContainerOptions {
   properties: ServerPropertiesPrimitives;
 }
 
-/** Maps the curated server.properties bag to itzg/minecraft-server env vars. */
-function propertiesToEnv(p: ServerPropertiesPrimitives): string[] {
+/** Maps the curated server.properties bag to itzg/minecraft-server (Java) env vars. */
+function javaPropertiesToEnv(p: ServerPropertiesPrimitives): string[] {
   const env = [
     `DIFFICULTY=${p.difficulty}`,
     `MODE=${p.gamemode}`,
@@ -35,6 +40,26 @@ function propertiesToEnv(p: ServerPropertiesPrimitives): string[] {
   return env;
 }
 
+/**
+ * Maps the curated bag to itzg/minecraft-bedrock-server env vars. Bedrock has a
+ * different property surface: `pvp`/`hardcore` and the per-name whitelist have no
+ * clean env equivalent, so they are intentionally not emitted; `motd` maps to the
+ * server display name and `seed` to the level seed.
+ */
+function bedrockPropertiesToEnv(p: ServerPropertiesPrimitives): string[] {
+  const env = [
+    `GAMEMODE=${p.gamemode}`,
+    `DIFFICULTY=${p.difficulty}`,
+    `MAX_PLAYERS=${p.maxPlayers}`,
+    `ONLINE_MODE=${p.onlineMode}`,
+    `VIEW_DISTANCE=${p.viewDistance}`,
+    `ALLOW_LIST=${p.whitelistEnabled}`,
+  ];
+  if (p.motd) env.push(`SERVER_NAME=${p.motd}`);
+  if (p.seed) env.push(`LEVEL_SEED=${p.seed}`);
+  return env;
+}
+
 async function pullImage(image: string): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     docker.pull(image, (err: Error | null, stream: NodeJS.ReadableStream) => {
@@ -47,17 +72,43 @@ async function pullImage(image: string): Promise<void> {
   });
 }
 
-export async function createContainer(opts: ContainerOptions): Promise<string> {
-  const containerName = `mc-server-${opts.id}`;
-  const dataPath = `${config.mcDataPath}/${opts.id}`;
-
-  console.log('[docker] pulling itzg/minecraft-server...');
-  await pullImage('itzg/minecraft-server');
-  console.log('[docker] image ready');
-
+async function createBedrockContainer(
+  opts: ContainerOptions,
+  containerName: string,
+  dataPath: string,
+): Promise<string> {
+  // Bedrock has no RCON; it exposes a single UDP port (19132 inside the container)
+  // published to the user-chosen host port.
+  const udpPort = `${BEDROCK_PORT}/udp`;
   const container = await docker.createContainer({
     name: containerName,
-    Image: 'itzg/minecraft-server',
+    Image: BEDROCK_IMAGE,
+    Env: [
+      'EULA=TRUE',
+      `VERSION=${opts.version}`,
+      `SERVER_PORT=${BEDROCK_PORT}`,
+      ...bedrockPropertiesToEnv(opts.properties),
+    ],
+    ExposedPorts: { [udpPort]: {} },
+    HostConfig: {
+      PortBindings: { [udpPort]: [{ HostPort: String(opts.port) }] },
+      Binds: [`${dataPath}:/data`],
+      Memory: opts.ramMb * 1024 * 1024,
+      NanoCpus: Math.round(opts.cpuLimit * 1e9),
+      RestartPolicy: { Name: 'no' },
+    },
+  });
+  return container.id;
+}
+
+async function createJavaContainer(
+  opts: ContainerOptions,
+  containerName: string,
+  dataPath: string,
+): Promise<string> {
+  const container = await docker.createContainer({
+    name: containerName,
+    Image: JAVA_IMAGE,
     Env: [
       'EULA=TRUE',
       `VERSION=${opts.version}`,
@@ -66,7 +117,7 @@ export async function createContainer(opts: ContainerOptions): Promise<string> {
       `RCON_PASSWORD=${opts.rconPassword}`,
       'RCON_PORT=25575',
       'TYPE=VANILLA',
-      ...propertiesToEnv(opts.properties),
+      ...javaPropertiesToEnv(opts.properties),
     ],
     ExposedPorts: {
       '25565/tcp': {},
@@ -83,8 +134,22 @@ export async function createContainer(opts: ContainerOptions): Promise<string> {
       RestartPolicy: { Name: 'no' },
     },
   });
-
   return container.id;
+}
+
+export async function createContainer(opts: ContainerOptions): Promise<string> {
+  const containerName = `mc-server-${opts.id}`;
+  const dataPath = `${config.mcDataPath}/${opts.id}`;
+  const isBedrock = opts.edition === 'bedrock';
+  const image = isBedrock ? BEDROCK_IMAGE : JAVA_IMAGE;
+
+  console.log(`[docker] pulling ${image}...`);
+  await pullImage(image);
+  console.log('[docker] image ready');
+
+  return isBedrock
+    ? createBedrockContainer(opts, containerName, dataPath)
+    : createJavaContainer(opts, containerName, dataPath);
 }
 
 export async function startContainer(containerId: string): Promise<void> {
