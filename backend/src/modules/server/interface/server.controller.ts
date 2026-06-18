@@ -23,6 +23,7 @@ const propertiesSchema = z
 
 const createSchema = z.object({
   name: z.string().min(1).max(100),
+  edition: z.enum(['java', 'bedrock']).optional(),
   version: z.string().optional(),
   port: z.number().int().min(1024).max(65534),
   ramMb: z.number().int().min(512).max(16384).optional(),
