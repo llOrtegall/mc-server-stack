@@ -8,6 +8,7 @@ import { ServerStatus } from './ServerStatus.js';
 export interface ServerPrimitives {
   id: string;
   name: string;
+  edition: string;
   version: string;
   port: number;
   rconPort: number;
@@ -23,6 +24,7 @@ export interface ServerPrimitives {
 export class Server {
   private readonly id: string;
   private readonly name: string;
+  private readonly edition: string;
   private readonly version: string;
   private readonly port: number;
   private readonly rconPort: number;
@@ -37,6 +39,7 @@ export class Server {
   private constructor(props: {
     id: string;
     name: string;
+    edition: string;
     version: string;
     port: number;
     rconPort: number;
@@ -50,6 +53,7 @@ export class Server {
   }) {
     this.id = props.id;
     this.name = props.name;
+    this.edition = props.edition;
     this.version = props.version;
     this.port = props.port;
     this.rconPort = props.rconPort;
@@ -67,6 +71,7 @@ export class Server {
     return new Server({
       id: data.id,
       name: data.name,
+      edition: data.edition ?? 'java',
       version: data.version,
       port: data.port,
       rconPort: data.rconPort,
@@ -86,6 +91,14 @@ export class Server {
 
   getName(): string {
     return this.name;
+  }
+
+  getEdition(): string {
+    return this.edition;
+  }
+
+  isBedrock(): boolean {
+    return this.edition === 'bedrock';
   }
 
   getVersion(): string {
@@ -128,6 +141,7 @@ export class Server {
     return {
       id: this.id,
       name: this.name,
+      edition: this.edition,
       version: this.version,
       port: this.port,
       rconPort: this.rconPort,

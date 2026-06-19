@@ -7,6 +7,7 @@ export function create(overrides: Partial<ServerPrimitives> = {}): Server {
   return Server.fromPrimitive({
     id: faker.string.uuid(),
     name: faker.lorem.words(2),
+    edition: 'java',
     version: '1.21.4',
     port,
     rconPort: port + 1,
