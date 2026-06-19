@@ -18,11 +18,16 @@ export class RconWorldFlusher implements WorldFlusher {
     this.consoleGateway = consoleGateway;
   }
 
-  /** Returns the RCON target only when the server is running, else null. */
+  /**
+   * Returns the RCON target only when the server is running, else null. Bedrock
+   * has no RCON, so it never yields a target (flush/resume become no-ops — its
+   * backups are best-effort snapshots).
+   */
   private async runningTarget(serverId: string): Promise<RconTarget | null> {
     const server = await this.serverRepository.getById(serverId);
     if (server === null) return null;
     const data = server.toPrimitive();
+    if (data.edition === 'bedrock') return null;
     if (data.status !== 'running') return null;
     return { rconPort: data.rconPort, rconPassword: data.rconPassword };
   }
