@@ -15,6 +15,7 @@ interface Props {
   onChange: (value: ServerPropertiesInput) => void;
   disabled?: boolean;
   idPrefix?: string;
+  edition?: 'java' | 'bedrock';
 }
 
 export function ServerPropertiesForm({
@@ -22,7 +23,11 @@ export function ServerPropertiesForm({
   onChange,
   disabled = false,
   idPrefix = 'sp',
+  edition = 'java',
 }: Props) {
+  // Bedrock has no clean env mapping for PvP/Hardcore or a per-name whitelist,
+  // so those fields are hidden for Bedrock servers.
+  const isBedrock = edition === 'bedrock';
   function set<K extends keyof ServerPropertiesInput>(
     key: K,
     v: ServerPropertiesInput[K],
@@ -105,7 +110,9 @@ export function ServerPropertiesForm({
       </div>
 
       <div>
-        <Label htmlFor={`${idPrefix}-motd`}>MOTD</Label>
+        <Label htmlFor={`${idPrefix}-motd`}>
+          {isBedrock ? 'Nombre del servidor' : 'MOTD'}
+        </Label>
         <Input
           id={`${idPrefix}-motd`}
           maxLength={150}
@@ -127,18 +134,22 @@ export function ServerPropertiesForm({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <Checkbox
-          id={`${idPrefix}-pvp`}
-          label="PvP"
-          checked={value.pvp ?? true}
-          onChange={(c) => set('pvp', c)}
-        />
-        <Checkbox
-          id={`${idPrefix}-hardcore`}
-          label="Hardcore"
-          checked={value.hardcore ?? false}
-          onChange={(c) => set('hardcore', c)}
-        />
+        {!isBedrock && (
+          <Checkbox
+            id={`${idPrefix}-pvp`}
+            label="PvP"
+            checked={value.pvp ?? true}
+            onChange={(c) => set('pvp', c)}
+          />
+        )}
+        {!isBedrock && (
+          <Checkbox
+            id={`${idPrefix}-hardcore`}
+            label="Hardcore"
+            checked={value.hardcore ?? false}
+            onChange={(c) => set('hardcore', c)}
+          />
+        )}
         <Checkbox
           id={`${idPrefix}-onlineMode`}
           label="Modo online"
@@ -147,32 +158,34 @@ export function ServerPropertiesForm({
         />
         <Checkbox
           id={`${idPrefix}-whitelistEnabled`}
-          label="Whitelist activa"
+          label={isBedrock ? 'Allow list activa' : 'Whitelist activa'}
           checked={value.whitelistEnabled ?? false}
           onChange={(c) => set('whitelistEnabled', c)}
         />
       </div>
 
-      <div>
-        <Label htmlFor={`${idPrefix}-whitelist`}>
-          Whitelist (un usuario por línea)
-        </Label>
-        <Textarea
-          id={`${idPrefix}-whitelist`}
-          rows={3}
-          value={(value.whitelist ?? []).join('\n')}
-          onChange={(e) =>
-            set(
-              'whitelist',
-              e.target.value
-                .split(/[\n,]/)
-                .map((name) => name.trim())
-                .filter((name) => name.length > 0),
-            )
-          }
-          placeholder="Notch&#10;jeb_"
-        />
-      </div>
+      {!isBedrock && (
+        <div>
+          <Label htmlFor={`${idPrefix}-whitelist`}>
+            Whitelist (un usuario por línea)
+          </Label>
+          <Textarea
+            id={`${idPrefix}-whitelist`}
+            rows={3}
+            value={(value.whitelist ?? []).join('\n')}
+            onChange={(e) =>
+              set(
+                'whitelist',
+                e.target.value
+                  .split(/[\n,]/)
+                  .map((name) => name.trim())
+                  .filter((name) => name.length > 0),
+              )
+            }
+            placeholder="Notch&#10;jeb_"
+          />
+        </div>
+      )}
     </fieldset>
   );
 }

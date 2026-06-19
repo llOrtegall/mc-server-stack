@@ -46,4 +46,24 @@ describe('ServerPropertiesForm', () => {
       );
     });
   });
+
+  describe('Bedrock edition', () => {
+    it('hides PvP, Hardcore and the per-name whitelist', () => {
+      render(
+        <ServerPropertiesForm
+          value={DEFAULT_PROPERTIES}
+          onChange={vi.fn()}
+          edition="bedrock"
+        />,
+      );
+
+      expect(screen.queryByLabelText('PvP')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Hardcore')).not.toBeInTheDocument();
+      expect(
+        screen.queryByLabelText('Whitelist (un usuario por línea)'),
+      ).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Nombre del servidor')).toBeInTheDocument();
+      expect(screen.getByLabelText('Allow list activa')).toBeInTheDocument();
+    });
+  });
 });

@@ -61,6 +61,7 @@ export function ServerPropertiesPanel({ server, onUpdated }: Props) {
         onChange={setProperties}
         disabled={saving}
         idPrefix="edit"
+        edition={server.isBedrock() ? 'bedrock' : 'java'}
       />
 
       {error && (

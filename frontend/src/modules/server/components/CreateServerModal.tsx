@@ -2,7 +2,7 @@ import { Plus, X } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { Button } from '../../../shared/components/ui/Button.js';
 import { Card } from '../../../shared/components/ui/Card.js';
-import { Input, Label } from '../../../shared/components/ui/Field.js';
+import { Input, Label, Select } from '../../../shared/components/ui/Field.js';
 import type { HostResources } from '../../system/domain/HostResources.js';
 import type { CreateServerInput } from '../domain/CreateServerInput.js';
 import type { ServerPropertiesInput } from '../domain/ServerProperties.js';
@@ -22,6 +22,7 @@ export function CreateServerModal({
   hostResources,
 }: Props) {
   const [name, setName] = useState('');
+  const [edition, setEdition] = useState<'java' | 'bedrock'>('java');
   const [port, setPort] = useState('');
   const [version, setVersion] = useState('');
   const [ramMb, setRamMb] = useState('');
@@ -34,9 +35,11 @@ export function CreateServerModal({
 
   const maxCpu = hostResources?.getCpuCores() ?? 8;
   const maxRam = hostResources?.getMemoryMb() ?? 16384;
+  const isBedrock = edition === 'bedrock';
 
   function resetForm() {
     setName('');
+    setEdition('java');
     setPort('');
     setVersion('');
     setRamMb('');
@@ -52,6 +55,7 @@ export function CreateServerModal({
     try {
       await onSubmit({
         name,
+        edition,
         port: Number(port),
         version: version || undefined,
         ramMb: ramMb ? Number(ramMb) : undefined,
@@ -97,6 +101,17 @@ export function CreateServerModal({
             />
           </div>
           <div>
+            <Label htmlFor="srv-edition">Edición</Label>
+            <Select
+              id="srv-edition"
+              value={edition}
+              onChange={(e) => setEdition(e.target.value as 'java' | 'bedrock')}
+            >
+              <option value="java">Java</option>
+              <option value="bedrock">Bedrock</option>
+            </Select>
+          </div>
+          <div>
             <Label htmlFor="srv-port">Puerto *</Label>
             <Input
               id="srv-port"
@@ -106,8 +121,13 @@ export function CreateServerModal({
               max={65534}
               value={port}
               onChange={(e) => setPort(e.target.value)}
-              placeholder="25565"
+              placeholder={isBedrock ? '19132' : '25565'}
             />
+            {isBedrock && (
+              <p className="mt-1 text-xs text-zinc-500">
+                Bedrock usa UDP (puerto interno 19132).
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="srv-version">Version</Label>
@@ -115,7 +135,7 @@ export function CreateServerModal({
               id="srv-version"
               value={version}
               onChange={(e) => setVersion(e.target.value)}
-              placeholder="1.21.4"
+              placeholder={isBedrock ? 'LATEST' : '1.21.4'}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -163,6 +183,7 @@ export function CreateServerModal({
             onChange={setProperties}
             disabled={submitting}
             idPrefix="create"
+            edition={edition}
           />
 
           {error && (
