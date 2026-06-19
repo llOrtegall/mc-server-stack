@@ -58,6 +58,30 @@ describe('Watchdog (unit)', () => {
   });
 
   describe('Error Scenarios', () => {
+    it('never polls or stops a bedrock server (no RCON)', async () => {
+      const bedrock = ServerMother.create({
+        id: 'srv-bedrock',
+        edition: 'bedrock',
+        status: 'running',
+        containerId: 'c-srv-bedrock',
+      });
+      const serverRepository = ServerRepositoryMother.create({
+        getAll: mock(async () => ServerList.create([bedrock])),
+      });
+      const serverRuntime = ServerRuntimeMother.create();
+      const consoleGateway = ConsoleGatewayMother.create();
+      const watchdog = new Watchdog({
+        serverRepository,
+        serverRuntime,
+        consoleGateway,
+      });
+
+      for (let i = 0; i < 6; i++) await watchdog.tick();
+
+      expect(consoleGateway.sendCommand).not.toHaveBeenCalled();
+      expect(serverRuntime.stop).not.toHaveBeenCalled();
+    });
+
     it('skips a server whose RCON is unreachable', async () => {
       const serverRepository = ServerRepositoryMother.create({
         getAll: mock(async () => ServerList.create([runningServer('srv-1')])),

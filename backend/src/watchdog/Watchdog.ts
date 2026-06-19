@@ -52,7 +52,11 @@ export class Watchdog {
   async tick(): Promise<void> {
     const servers = (await this.serverRepository.getAll())
       .toPrimitive()
-      .filter((s) => s.status === 'running' && s.id !== null);
+      // Bedrock has no RCON, so it can't be polled for player count — skip it.
+      .filter(
+        (s) =>
+          s.status === 'running' && s.id !== null && s.edition !== 'bedrock',
+      );
 
     for (const server of servers) {
       const id = server.id as string;
