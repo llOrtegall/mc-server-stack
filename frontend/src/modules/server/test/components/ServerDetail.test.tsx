@@ -5,8 +5,17 @@ import { ServerDetail } from '../../components/ServerDetail.js';
 import type { ServerStatusValue } from '../../domain/ServerStatus.js';
 import * as ServerMother from '../helpers/ServerMother.js';
 
-function renderDetail(status: ServerStatusValue, port = 25565) {
-  const server = ServerMother.create({ name: 'Survival', status, port });
+function renderDetail(
+  status: ServerStatusValue,
+  port = 25565,
+  edition = 'java',
+) {
+  const server = ServerMother.create({
+    name: 'Survival',
+    status,
+    port,
+    edition,
+  });
   const onAction = vi.fn();
   const onRequestDelete = vi.fn();
   render(
@@ -46,6 +55,21 @@ describe('ServerDetail', () => {
 
       expect(screen.getByRole('button', { name: 'Iniciar' })).toBeEnabled();
       expect(screen.getByRole('button', { name: 'Detener' })).toBeDisabled();
+    });
+
+    it('shows the Java edition and its RCON port', () => {
+      renderDetail('running');
+
+      expect(screen.getByText('Java')).toBeInTheDocument();
+      expect(screen.getByText('Puerto RCON')).toBeInTheDocument();
+    });
+
+    it('shows Bedrock as a UDP port and hides RCON', () => {
+      renderDetail('running', 19132, 'bedrock');
+
+      expect(screen.getByText('Bedrock')).toBeInTheDocument();
+      expect(screen.getByText('Puerto (UDP)')).toBeInTheDocument();
+      expect(screen.queryByText('Puerto RCON')).not.toBeInTheDocument();
     });
   });
 

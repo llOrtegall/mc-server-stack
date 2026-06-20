@@ -1,4 +1,4 @@
-import { Cpu, MemoryStick, Plug, Tag } from 'lucide-react';
+import { Boxes, Cpu, MemoryStick, Plug, Tag } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import type { Server } from '../domain/Server.js';
@@ -34,9 +34,15 @@ export function ServerCard({ server }: { server: Server }) {
           value={`${server.getRamMb()} MB`}
         />
       </div>
-      <div className="relative mt-3 flex items-center gap-1.5 text-xs text-zinc-500">
-        <Cpu className="h-3.5 w-3.5" />
-        {server.getCpuLimit()} {server.getCpuLimit() === 1 ? 'core' : 'cores'}
+      <div className="relative mt-3 flex items-center gap-3 text-xs text-zinc-500">
+        <span className="flex items-center gap-1.5">
+          <Cpu className="h-3.5 w-3.5" />
+          {server.getCpuLimit()} {server.getCpuLimit() === 1 ? 'core' : 'cores'}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Boxes className="h-3.5 w-3.5" />
+          {server.isBedrock() ? 'Bedrock' : 'Java'}
+        </span>
       </div>
     </Link>
   );

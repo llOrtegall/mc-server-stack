@@ -1,4 +1,5 @@
 import {
+  Boxes,
   Calendar,
   ChevronLeft,
   Cpu,
@@ -38,6 +39,8 @@ export function ServerDetail({
   const status = server.getStatus();
   const value = status.toPrimitive();
   const busy = actionLoading !== null;
+  const isBedrock = server.isBedrock();
+  const editionLabel = isBedrock ? 'Bedrock' : 'Java';
 
   return (
     <div>
@@ -70,16 +73,19 @@ export function ServerDetail({
 
         <div className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/5 sm:grid-cols-3">
           <Info icon={<Tag />} label="Version" value={server.getVersion()} />
+          <Info icon={<Boxes />} label="Edición" value={editionLabel} />
           <Info
             icon={<Plug />}
-            label="Puerto"
+            label={isBedrock ? 'Puerto (UDP)' : 'Puerto'}
             value={String(server.getPort())}
           />
-          <Info
-            icon={<Terminal />}
-            label="Puerto RCON"
-            value={String(server.getRconPort())}
-          />
+          {!isBedrock && (
+            <Info
+              icon={<Terminal />}
+              label="Puerto RCON"
+              value={String(server.getRconPort())}
+            />
+          )}
           <Info
             icon={<MemoryStick />}
             label="RAM"
