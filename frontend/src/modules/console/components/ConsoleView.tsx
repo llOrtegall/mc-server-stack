@@ -9,9 +9,16 @@ interface Props {
   sending: boolean;
   error: string;
   onSend: (command: string) => void;
+  readOnly?: boolean;
 }
 
-export function ConsoleView({ lines, sending, error, onSend }: Props) {
+export function ConsoleView({
+  lines,
+  sending,
+  error,
+  onSend,
+  readOnly = false,
+}: Props) {
   const [command, setCommand] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -45,18 +52,24 @@ export function ConsoleView({ lines, sending, error, onSend }: Props) {
 
       {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
-        <input
-          value={command}
-          onChange={(e) => setCommand(e.target.value)}
-          placeholder="say hola"
-          className={cn(fieldClass, 'flex-1 font-mono')}
-        />
-        <Button type="submit" disabled={sending}>
-          <Send className="h-4 w-4" />
-          {sending ? 'Enviando...' : 'Enviar'}
-        </Button>
-      </form>
+      {readOnly ? (
+        <p className="mt-3 text-xs text-zinc-500">
+          Los servidores Bedrock no admiten comandos por consola (sin RCON).
+        </p>
+      ) : (
+        <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
+          <input
+            value={command}
+            onChange={(e) => setCommand(e.target.value)}
+            placeholder="say hola"
+            className={cn(fieldClass, 'flex-1 font-mono')}
+          />
+          <Button type="submit" disabled={sending}>
+            <Send className="h-4 w-4" />
+            {sending ? 'Enviando...' : 'Enviar'}
+          </Button>
+        </form>
+      )}
     </div>
   );
 }

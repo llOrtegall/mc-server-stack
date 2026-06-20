@@ -3,7 +3,13 @@ import { Card } from '../../../shared/components/ui/Card.js';
 import { ConsoleView } from '../components/ConsoleView.js';
 import { useConsole } from '../hooks/useConsole.js';
 
-export function ConsolePanel({ serverId }: { serverId: string }) {
+interface Props {
+  serverId: string;
+  /** Bedrock has no RCON, so its console is logs-only (no command input). */
+  readOnly?: boolean;
+}
+
+export function ConsolePanel({ serverId, readOnly = false }: Props) {
   const { lines, sending, error, send } = useConsole(serverId);
 
   return (
@@ -17,6 +23,7 @@ export function ConsolePanel({ serverId }: { serverId: string }) {
         sending={sending}
         error={error}
         onSend={send}
+        readOnly={readOnly}
       />
     </Card>
   );

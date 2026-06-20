@@ -41,4 +41,25 @@ describe('ConsoleView', () => {
       expect(input).toHaveValue('');
     });
   });
+
+  describe('Read-only (Bedrock)', () => {
+    it('hides the command input and explains why', () => {
+      render(
+        <ConsoleView
+          lines={['line one']}
+          sending={false}
+          error=""
+          onSend={vi.fn()}
+          readOnly
+        />,
+      );
+
+      expect(screen.getByText('line one')).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('say hola')).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Enviar' }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByText(/no admiten comandos/i)).toBeInTheDocument();
+    });
+  });
 });

@@ -54,7 +54,7 @@ export function ServerDetailContainer() {
 
       <ServerPropertiesPanel server={server} onUpdated={refresh} />
 
-      <ConsolePanel serverId={server.getId()} />
+      <ConsolePanel serverId={server.getId()} readOnly={server.isBedrock()} />
       <BackupsPanel serverId={server.getId()} />
 
       <ConfirmDialog
