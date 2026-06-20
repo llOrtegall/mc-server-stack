@@ -127,6 +127,7 @@ Crea un nuevo servidor Minecraft y su contenedor Docker.
 ```json
 {
   "name": "mi-servidor",
+  "edition": "java",
   "version": "1.21.4",
   "port": 25565,
   "ramMb": 2048,
@@ -138,13 +139,21 @@ Crea un nuevo servidor Minecraft y su contenedor Docker.
 | Campo | Tipo | Requerido | Default |
 |---|---|---|---|
 | `name` | string | ✅ | — |
-| `version` | string | ❌ | `1.21.4` |
+| `edition` | `java` \| `bedrock` | ❌ | `java` |
+| `version` | string | ❌ | `1.21.4` (Java) / `LATEST` (Bedrock) |
 | `port` | number (1024–65534) | ✅ | — |
 | `ramMb` | number (512–16384) | ❌ | `1024` |
 | `cpuLimit` | number (0.1–8) | ❌ | `1.0` |
 | `properties` | objeto (ver abajo) | ❌ | defaults de Minecraft |
 
-> El puerto RCON se asigna automáticamente como `port + 1`.
+> **Bedrock** usa la imagen `itzg/minecraft-bedrock-server` y publica el puerto
+> elegido como `19132/udp`. No tiene RCON, por lo que la consola es **solo
+> lectura** (logs + stream; sin envío de comandos), el watchdog **no** lo
+> auto-detiene y los backups omiten el flush de mundo (snapshot best-effort;
+> conviene detenerlo antes). En Bedrock se ignoran `pvp`, `hardcore` y la
+> whitelist por nombre; `motd` se usa como nombre del servidor.
+>
+> El puerto RCON (solo Java) se asigna automáticamente como `port + 1`.
 >
 > **`properties`** (todas opcionales, subset curado de `server.properties`):
 > `difficulty` (`peaceful\|easy\|normal\|hard`), `gamemode`
@@ -318,9 +327,10 @@ El contrato de la API es **camelCase**. Las columnas de la base de datos siguen
 {
   id: string          // UUID
   name: string
-  version: string     // e.g. "1.21.4"
-  port: number        // puerto Minecraft (externo)
-  rconPort: number    // port + 1
+  edition: "java" | "bedrock"  // inmutable; "java" por defecto
+  version: string     // e.g. "1.21.4" (Java) / "LATEST" (Bedrock)
+  port: number        // puerto Minecraft (externo) — UDP en Bedrock
+  rconPort: number    // port + 1 (sin uso en Bedrock, que no tiene RCON)
   containerId: string | null
   status: "stopped" | "starting" | "running" | "stopping" | "error"
   ramMb: number
@@ -409,9 +419,11 @@ Reglas por capa:
   `S3BackupStorage`, `DockerServerRuntime`, `RconConsoleGateway`, ...).
 - **interface**: controllers (validan con Zod, traducen a `AppError`) + routers.
 
-Los servidores Minecraft corren en contenedores Docker usando la imagen
-[`itzg/minecraft-server`](https://github.com/itzg/docker-minecraft-server). Los
-datos de cada servidor se persisten en `MC_DATA_PATH/{id}/` en el host.
+Los servidores Minecraft corren en contenedores Docker: Java usa
+[`itzg/minecraft-server`](https://github.com/itzg/docker-minecraft-server) y
+Bedrock [`itzg/minecraft-bedrock-server`](https://github.com/itzg/docker-minecraft-bedrock-server),
+según la `edition` del servidor. Los datos de cada servidor se persisten en
+`MC_DATA_PATH/{id}/` en el host.
 
 ---
 

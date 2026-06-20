@@ -39,10 +39,10 @@ bun run test:watch   # vitest en modo watch
 ```
 src/
 ├── modules/
-│   ├── server/        # listado, detalle, crear (+ propiedades MC), editar props, acciones
+│   ├── server/        # listado, detalle, crear (edición Java/Bedrock + propiedades MC), editar props, acciones
 │   ├── auth/          # login, sesión (AuthContext), ProtectedRoute
 │   ├── backup/        # crear (local/nube) / restaurar / borrar + plan automático
-│   ├── console/       # logs + comando + stream en vivo (WebSocket)
+│   ├── console/       # logs + comando + stream en vivo (WebSocket); solo lectura en Bedrock
 │   └── system/        # capacidad del host (HostCapacityCard, useHostResources)
 │       ├── domain/          # entidades, value objects, puertos (interfaces)
 │       ├── application/     # casos de uso + factory

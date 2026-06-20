@@ -5,6 +5,7 @@ Una plataforma completa para gestionar servidores de Minecraft usando Docker. In
 ## 🚀 Características
 
 - **Gestión de Servidores**: Crear, iniciar, detener, eliminar y editar servidores de Minecraft
+- **Java y Bedrock**: Elige la edición al crear; Bedrock usa `itzg/minecraft-bedrock-server` (UDP 19132, sin RCON → consola de solo lectura)
 - **Propiedades de Minecraft**: Configura `server.properties` (dificultad, modo, max jugadores, MOTD, PvP, seed, whitelist, ...) al crear o editar
 - **Backups**: Local (volumen) o nube (Cloudflare R2 / AWS S3) — destino por backup, con compresión gzip
 - **Backups Automáticos**: Planes programados por servidor (cada hora / 6h / diario / semanal) con retención y poda automática
