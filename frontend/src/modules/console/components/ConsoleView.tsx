@@ -20,11 +20,13 @@ export function ConsoleView({
   readOnly = false,
 }: Props) {
   const [command, setCommand] = useState('');
-  const endRef = useRef<HTMLDivElement>(null);
+  const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (lines.length === 0) return;
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll the log box itself, not the page, so new lines don't yank the viewport.
+    const box = logRef.current;
+    if (box) box.scrollTop = box.scrollHeight;
   }, [lines.length]);
 
   function handleSubmit(e: FormEvent) {
@@ -36,7 +38,10 @@ export function ConsoleView({
 
   return (
     <div>
-      <div className="h-72 overflow-y-auto rounded-xl border border-white/10 bg-black/70 p-3 font-mono text-xs leading-relaxed text-zinc-300 shadow-inner">
+      <div
+        ref={logRef}
+        className="h-72 overflow-y-auto rounded-xl border border-white/10 bg-black/70 p-3 font-mono text-xs leading-relaxed text-zinc-300 shadow-inner"
+      >
         {lines.length === 0 ? (
           <span className="text-zinc-600">Sin salida.</span>
         ) : (
@@ -47,7 +52,6 @@ export function ConsoleView({
             </div>
           ))
         )}
-        <div ref={endRef} />
       </div>
 
       {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
