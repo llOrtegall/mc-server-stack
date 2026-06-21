@@ -1,12 +1,27 @@
+import {
+  Archive,
+  ChevronLeft,
+  SlidersHorizontal,
+  Terminal,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog.js';
 import { Spinner } from '../../../shared/components/Spinner.js';
+import { Tabs } from '../../../shared/components/ui/Tabs.js';
 import { BackupsPanel } from '../../backup/containers/BackupsPanel.js';
 import { ConsolePanel } from '../../console/containers/ConsolePanel.js';
 import { ServerDetail } from '../components/ServerDetail.js';
 import { useServer } from '../hooks/useServer.js';
 import { ServerPropertiesPanel } from './ServerPropertiesPanel.js';
+
+type Tab = 'data' | 'console' | 'backups';
+
+const TABS = [
+  { id: 'data', label: 'Datos', icon: <SlidersHorizontal /> },
+  { id: 'console', label: 'Consola', icon: <Terminal /> },
+  { id: 'backups', label: 'Backups', icon: <Archive /> },
+];
 
 export function ServerDetailContainer() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +36,7 @@ export function ServerDetailContainer() {
     refresh,
   } = useServer(id ?? '');
   const [showDelete, setShowDelete] = useState(false);
+  const [tab, setTab] = useState<Tab>('data');
 
   if (loading) return <Spinner />;
 
@@ -44,18 +60,39 @@ export function ServerDetailContainer() {
 
   return (
     <>
-      <ServerDetail
-        server={server}
-        error={error}
-        actionLoading={actionLoading}
-        onAction={runAction}
-        onRequestDelete={() => setShowDelete(true)}
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1 text-sm text-zinc-400 transition-colors hover:text-zinc-200"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Volver
+      </Link>
+
+      <Tabs
+        tabs={TABS}
+        active={tab}
+        onChange={(id) => setTab(id as Tab)}
+        className="mt-3 mb-6 flex"
       />
 
-      <ServerPropertiesPanel server={server} onUpdated={refresh} />
+      {tab === 'data' && (
+        <>
+          <ServerDetail
+            server={server}
+            error={error}
+            actionLoading={actionLoading}
+            onAction={runAction}
+            onRequestDelete={() => setShowDelete(true)}
+          />
+          <ServerPropertiesPanel server={server} onUpdated={refresh} />
+        </>
+      )}
 
-      <ConsolePanel serverId={server.getId()} readOnly={server.isBedrock()} />
-      <BackupsPanel serverId={server.getId()} />
+      {tab === 'console' && (
+        <ConsolePanel serverId={server.getId()} readOnly={server.isBedrock()} />
+      )}
+
+      {tab === 'backups' && <BackupsPanel serverId={server.getId()} />}
 
       <ConfirmDialog
         open={showDelete}
