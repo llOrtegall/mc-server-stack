@@ -1,4 +1,4 @@
-import { describe, expect, it, mock } from 'bun:test';
+import { describe, expect, it, mock, spyOn } from 'bun:test';
 import { provisionServerContainer } from '../../application/provisionServerContainer.js';
 import * as ServerMother from '../helpers/ServerMother.js';
 import * as ServerRepositoryMother from '../helpers/ServerRepositoryMother.js';
@@ -36,6 +36,8 @@ describe('provisionServerContainer (unit)', () => {
 
   describe('Error Scenarios', () => {
     it('marks the server as `error` when the runtime fails and does not reject', async () => {
+      // The failure is expected and logged; keep it out of the test output.
+      const consoleError = spyOn(console, 'error').mockImplementation(() => {});
       const server = ServerMother.create({
         id: 'srv-1',
         containerId: null,
@@ -59,6 +61,9 @@ describe('provisionServerContainer (unit)', () => {
         .calls[0]?.[0];
       expect(updated.getContainerId()).toBeNull();
       expect(updated.toPrimitive().status).toBe('error');
+      expect(consoleError).toHaveBeenCalledTimes(1);
+
+      consoleError.mockRestore();
     });
   });
 });
