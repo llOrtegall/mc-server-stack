@@ -35,6 +35,14 @@ const updateSchema = z.object({
   properties: propertiesSchema,
 });
 
+const showCoordinatesSchema = z.object({
+  enabled: z.boolean(),
+});
+
+const pvpSchema = z.object({
+  enabled: z.boolean(),
+});
+
 /**
  * Translates the plain `Error`s thrown by the (HTTP-agnostic) use cases into the
  * proper `AppError` status codes. Unknown errors bubble up as 500.
@@ -46,6 +54,12 @@ function toAppError(err: unknown): unknown {
       return new AppError(404, 'Server not found');
     if (err.message.includes('has no container')) {
       return new AppError(400, 'Server has no container');
+    }
+    if (err.message.includes('is not running')) {
+      return new AppError(400, 'Server is not running');
+    }
+    if (err.message.includes('only supported on Bedrock')) {
+      return new AppError(400, 'Only supported on Bedrock servers');
     }
   }
   return err;
@@ -167,6 +181,52 @@ export async function restart(
   try {
     await serverFactory.restartServer(req.params.id as string);
     res.status(204).send();
+  } catch (err) {
+    next(toAppError(err));
+  }
+}
+
+export async function setShowCoordinates(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const body = showCoordinatesSchema.safeParse(req.body);
+    if (!body.success) {
+      throw new AppError(
+        400,
+        body.error.issues.map((i) => i.message).join(', '),
+      );
+    }
+    const server = await serverFactory.setShowCoordinates(
+      req.params.id as string,
+      body.data.enabled,
+    );
+    res.json(server.toPublic());
+  } catch (err) {
+    next(toAppError(err));
+  }
+}
+
+export async function setPvp(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const body = pvpSchema.safeParse(req.body);
+    if (!body.success) {
+      throw new AppError(
+        400,
+        body.error.issues.map((i) => i.message).join(', '),
+      );
+    }
+    const server = await serverFactory.setPvp(
+      req.params.id as string,
+      body.data.enabled,
+    );
+    res.json(server.toPublic());
   } catch (err) {
     next(toAppError(err));
   }

@@ -11,3 +11,5 @@ serverRouter.delete('/:id', serverController.remove);
 serverRouter.post('/:id/start', serverController.start);
 serverRouter.post('/:id/stop', serverController.stop);
 serverRouter.post('/:id/restart', serverController.restart);
+serverRouter.post('/:id/coordinates', serverController.setShowCoordinates);
+serverRouter.post('/:id/pvp', serverController.setPvp);

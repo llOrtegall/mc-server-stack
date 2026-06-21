@@ -25,6 +25,8 @@ export interface ServerPrimitives {
   ramMb: number;
   cpuLimit: number;
   properties: ServerPropertiesPrimitives;
+  showCoordinates: boolean;
+  pvp: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -43,6 +45,8 @@ export class Server {
     private readonly ramMb: RamMb,
     private readonly cpuLimit: CpuLimit,
     private readonly properties: ServerProperties,
+    private readonly showCoordinates: boolean,
+    private readonly pvp: boolean,
     private readonly createdAt: string | null,
     private readonly updatedAt: string | null,
   ) {}
@@ -60,6 +64,8 @@ export class Server {
     ramMb: RamMb;
     cpuLimit: CpuLimit;
     properties: ServerProperties;
+    showCoordinates?: boolean;
+    pvp?: boolean;
     createdAt?: string | null;
     updatedAt?: string | null;
   }): Server {
@@ -76,6 +82,8 @@ export class Server {
       props.ramMb,
       props.cpuLimit,
       props.properties,
+      props.showCoordinates ?? false,
+      props.pvp ?? true,
       props.createdAt ?? null,
       props.updatedAt ?? null,
     );
@@ -133,6 +141,8 @@ export class Server {
       ramMb: RamMb.fromPrimitive(data.ramMb),
       cpuLimit: CpuLimit.fromPrimitive(data.cpuLimit),
       properties: ServerProperties.fromPrimitive(data.properties),
+      showCoordinates: data.showCoordinates ?? false,
+      pvp: data.pvp ?? true,
       createdAt: data.createdAt ?? null,
       updatedAt: data.updatedAt ?? null,
     });
@@ -148,6 +158,15 @@ export class Server {
 
   getEdition(): ServerEdition {
     return this.edition;
+  }
+
+  getShowCoordinates(): boolean {
+    return this.showCoordinates;
+  }
+
+  /** Bedrock `pvp` gamerule state (distinct from the Java `properties.pvp`). */
+  getPvp(): boolean {
+    return this.pvp;
   }
 
   withId(id: string): Server {
@@ -166,6 +185,14 @@ export class Server {
     return Server.create({ ...this.props(), properties });
   }
 
+  withShowCoordinates(showCoordinates: boolean): Server {
+    return Server.create({ ...this.props(), showCoordinates });
+  }
+
+  withPvp(pvp: boolean): Server {
+    return Server.create({ ...this.props(), pvp });
+  }
+
   private props() {
     return {
       id: this.id,
@@ -180,6 +207,8 @@ export class Server {
       ramMb: this.ramMb,
       cpuLimit: this.cpuLimit,
       properties: this.properties,
+      showCoordinates: this.showCoordinates,
+      pvp: this.pvp,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
@@ -203,6 +232,8 @@ export class Server {
       ramMb: this.ramMb.toPrimitive(),
       cpuLimit: this.cpuLimit.toPrimitive(),
       properties: this.properties.toPrimitive(),
+      showCoordinates: this.showCoordinates,
+      pvp: this.pvp,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };

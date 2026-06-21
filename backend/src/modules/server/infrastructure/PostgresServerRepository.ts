@@ -15,6 +15,8 @@ const COLUMNS = `id,
   ram_mb AS "ramMb",
   cpu_limit AS "cpuLimit",
   properties,
+  show_coordinates AS "showCoordinates",
+  pvp,
   created_at AS "createdAt",
   updated_at AS "updatedAt"`;
 
@@ -79,8 +81,8 @@ export class PostgresServerRepository implements ServerRepository {
       `UPDATE servers
        SET name = $1, edition = $2, version = $3, port = $4, rcon_port = $5, rcon_password = $6,
            container_id = $7, status = $8, ram_mb = $9, cpu_limit = $10,
-           properties = $11, updated_at = NOW()
-       WHERE id = $12
+           properties = $11, show_coordinates = $12, pvp = $13, updated_at = NOW()
+       WHERE id = $14
        RETURNING ${COLUMNS}`,
       [
         data.name,
@@ -94,6 +96,8 @@ export class PostgresServerRepository implements ServerRepository {
         data.ramMb,
         data.cpuLimit,
         JSON.stringify(data.properties),
+        data.showCoordinates,
+        data.pvp,
         data.id,
       ],
     );

@@ -9,6 +9,7 @@ export function create(overrides: Partial<ServerRuntime> = {}): ServerRuntime {
     stop: mock(async () => {}),
     restart: mock(async () => {}),
     remove: mock(async () => {}),
+    setGameRule: mock(async () => {}),
     ...overrides,
   };
 }

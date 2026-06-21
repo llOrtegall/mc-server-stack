@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS servers (
   ram_mb INTEGER NOT NULL DEFAULT 1024,
   cpu_limit FLOAT NOT NULL DEFAULT 1.0,
   properties JSONB NOT NULL DEFAULT '{}'::jsonb,
+  show_coordinates BOOLEAN NOT NULL DEFAULT false,
+  pvp BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -31,6 +33,15 @@ ALTER TABLE servers
 -- Idempotent upgrade for servers tables created before the edition column existed.
 ALTER TABLE servers
   ADD COLUMN IF NOT EXISTS edition VARCHAR(20) NOT NULL DEFAULT 'java';
+
+-- Bedrock gamerule toggles (show coordinates, pvp) applied via the in-container
+-- send-command script. On Bedrock these are gamerules, not server.properties, so
+-- they live in their own columns. Note `pvp` here is the Bedrock gamerule and is
+-- distinct from the Java `server.properties` pvp held inside `properties`.
+ALTER TABLE servers
+  ADD COLUMN IF NOT EXISTS show_coordinates BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE servers
+  ADD COLUMN IF NOT EXISTS pvp BOOLEAN NOT NULL DEFAULT true;
 
 CREATE TABLE IF NOT EXISTS backups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -29,6 +29,8 @@ interface ServerOverrides {
   ramMb?: number;
   cpuLimit?: number;
   properties?: ServerPropertiesInput;
+  showCoordinates?: boolean;
+  pvp?: boolean;
 }
 
 export function create(overrides: ServerOverrides = {}): Server {
@@ -51,5 +53,7 @@ export function create(overrides: ServerOverrides = {}): Server {
     ramMb: RamMb.create(overrides.ramMb),
     cpuLimit: CpuLimit.create(overrides.cpuLimit),
     properties: ServerProperties.create(overrides.properties),
+    showCoordinates: overrides.showCoordinates ?? false,
+    pvp: overrides.pvp ?? true,
   });
 }

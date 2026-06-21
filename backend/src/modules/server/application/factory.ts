@@ -7,6 +7,8 @@ import { deleteServer } from './deleteServer.js';
 import { getServer } from './getServer.js';
 import { listServers } from './listServers.js';
 import { restartServer } from './restartServer.js';
+import { setPvp } from './setPvp.js';
+import { setShowCoordinates } from './setShowCoordinates.js';
 import { startServer } from './startServer.js';
 import { stopServer } from './stopServer.js';
 import { updateServerProperties } from './updateServerProperties.js';
@@ -44,6 +46,12 @@ export const serverFactory = {
 
   restartServer: (id: string) =>
     restartServer({ serverRepository, serverRuntime, id }),
+
+  setShowCoordinates: (id: string, enabled: boolean) =>
+    setShowCoordinates({ serverRepository, serverRuntime, id, enabled }),
+
+  setPvp: (id: string, enabled: boolean) =>
+    setPvp({ serverRepository, serverRuntime, id, enabled }),
 
   updateServerProperties: (
     id: string,

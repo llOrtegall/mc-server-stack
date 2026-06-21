@@ -39,4 +39,16 @@ export class DockerServerRuntime implements ServerRuntime {
   async remove(containerId: string): Promise<void> {
     await dockerService.removeContainer(containerId);
   }
+
+  async setGameRule(
+    containerId: string,
+    rule: string,
+    value: boolean,
+  ): Promise<void> {
+    await dockerService.sendBedrockCommand(containerId, [
+      'gamerule',
+      rule,
+      String(value),
+    ]);
+  }
 }

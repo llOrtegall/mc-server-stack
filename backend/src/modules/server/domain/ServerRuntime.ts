@@ -11,4 +11,10 @@ export interface ServerRuntime {
   stop: (containerId: string) => Promise<void>;
   restart: (containerId: string) => Promise<void>;
   remove: (containerId: string) => Promise<void>;
+  /** Sets a Bedrock gamerule (e.g. `showcoordinates`, `pvp`) on a running container. */
+  setGameRule: (
+    containerId: string,
+    rule: string,
+    value: boolean,
+  ) => Promise<void>;
 }

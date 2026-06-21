@@ -89,6 +89,10 @@ async function createBedrockContainer(
       `SERVER_PORT=${BEDROCK_PORT}`,
       ...bedrockPropertiesToEnv(opts.properties),
     ],
+    // Keep stdin open (but no TTY — a TTY would break the log demuxing) so the
+    // bundled `send-command` script can pipe console commands to the server's
+    // stdin. Bedrock has no RCON; this is the only way to run gamerules.
+    OpenStdin: true,
     ExposedPorts: { [udpPort]: {} },
     HostConfig: {
       PortBindings: { [udpPort]: [{ HostPort: String(opts.port) }] },
@@ -175,6 +179,31 @@ export async function removeContainer(containerId: string): Promise<void> {
     // already stopped
   }
   await container.remove({ force: true });
+}
+
+/**
+ * Runs a Bedrock console command inside the container via itzg's `send-command`
+ * script (which writes to the server process's stdin). Bedrock has no RCON, so
+ * this is how gamerules and other console commands are delivered. The container
+ * must be running and have been created with `OpenStdin: true`.
+ */
+export async function sendBedrockCommand(
+  containerId: string,
+  args: string[],
+): Promise<void> {
+  const container = docker.getContainer(containerId);
+  const exec = await container.exec({
+    Cmd: ['send-command', ...args],
+    AttachStdout: true,
+    AttachStderr: true,
+  });
+  const stream = await exec.start({});
+  // Drain the output so the exec completes and the promise settles.
+  await new Promise<void>((resolve, reject) => {
+    stream.on('end', resolve);
+    stream.on('error', reject);
+    stream.resume();
+  });
 }
 
 export async function getHostInfo(): Promise<{
