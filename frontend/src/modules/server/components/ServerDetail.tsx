@@ -2,11 +2,13 @@ import {
   Boxes,
   Calendar,
   Cpu,
+  MapPin,
   MemoryStick,
   Play,
   Plug,
   RotateCw,
   Square,
+  Swords,
   Tag,
   Terminal,
   Trash2,
@@ -14,6 +16,7 @@ import {
 import type { ReactNode } from 'react';
 import { Button } from '../../../shared/components/ui/Button.js';
 import { Card } from '../../../shared/components/ui/Card.js';
+import { cn } from '../../../shared/lib/cn.js';
 import type { Server } from '../domain/Server.js';
 import { StatusBadge } from './StatusBadge.js';
 
@@ -23,7 +26,11 @@ interface Props {
   server: Server;
   error: string;
   actionLoading: Action | 'delete' | null;
+  coordinatesLoading: boolean;
+  pvpLoading: boolean;
   onAction: (action: Action) => void;
+  onToggleCoordinates: (enabled: boolean) => void;
+  onTogglePvp: (enabled: boolean) => void;
   onRequestDelete: () => void;
 }
 
@@ -31,7 +38,11 @@ export function ServerDetail({
   server,
   error,
   actionLoading,
+  coordinatesLoading,
+  pvpLoading,
   onAction,
+  onToggleCoordinates,
+  onTogglePvp,
   onRequestDelete,
 }: Props) {
   const status = server.getStatus();
@@ -39,6 +50,7 @@ export function ServerDetail({
   const busy = actionLoading !== null;
   const isBedrock = server.isBedrock();
   const editionLabel = isBedrock ? 'Bedrock' : 'Java';
+  const isRunning = value === 'running';
 
   return (
     <Card className="p-6">
@@ -131,7 +143,83 @@ export function ServerDetail({
           {actionLoading === 'delete' ? 'Eliminando...' : 'Eliminar'}
         </Button>
       </div>
+
+      {isBedrock && (
+        <div className="mt-4 space-y-2">
+          <GameRuleToggle
+            icon={<MapPin className="h-4 w-4 text-zinc-400" />}
+            label="Mostrar coordenadas"
+            hint={
+              isRunning
+                ? 'Aplica el gamerule showcoordinates en el mundo.'
+                : 'Inicia el servidor para cambiar esta opcion.'
+            }
+            checked={server.getShowCoordinates()}
+            disabled={!isRunning || coordinatesLoading}
+            onToggle={onToggleCoordinates}
+          />
+          <GameRuleToggle
+            icon={<Swords className="h-4 w-4 text-zinc-400" />}
+            label="PvP"
+            hint={
+              isRunning
+                ? 'Aplica el gamerule pvp en el mundo.'
+                : 'Inicia el servidor para cambiar esta opcion.'
+            }
+            checked={server.getPvp()}
+            disabled={!isRunning || pvpLoading}
+            onToggle={onTogglePvp}
+          />
+        </div>
+      )}
     </Card>
+  );
+}
+
+function GameRuleToggle({
+  icon,
+  label,
+  hint,
+  checked,
+  disabled,
+  onToggle,
+}: {
+  icon: ReactNode;
+  label: string;
+  hint: string;
+  checked: boolean;
+  disabled: boolean;
+  onToggle: (enabled: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+      <div className="min-w-0">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-zinc-200">
+          {icon}
+          {label}
+        </span>
+        <p className="mt-0.5 text-xs text-zinc-500">{hint}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        disabled={disabled}
+        onClick={() => onToggle(!checked)}
+        className={cn(
+          'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+          checked ? 'bg-emerald-500' : 'bg-zinc-600',
+        )}
+      >
+        <span
+          className={cn(
+            'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+            checked ? 'translate-x-6' : 'translate-x-1',
+          )}
+        />
+      </button>
+    </div>
   );
 }
 

@@ -13,6 +13,8 @@ export function useServer(id: string) {
   const [actionLoading, setActionLoading] = useState<
     ServerAction | 'delete' | null
   >(null);
+  const [coordinatesLoading, setCoordinatesLoading] = useState(false);
+  const [pvpLoading, setPvpLoading] = useState(false);
 
   // Mirrors `server` without being a dependency of fetchServer — keeping `server`
   // in the deps made fetchServer change on every fetch, which re-fired the mount
@@ -71,6 +73,44 @@ export function useServer(id: string) {
     [id, fetchServer],
   );
 
+  const toggleCoordinates = useCallback(
+    async (enabled: boolean) => {
+      if (!id) return;
+      setCoordinatesLoading(true);
+      try {
+        const updated = await serverFactory.setShowCoordinates(id, enabled);
+        serverRef.current = updated;
+        setServer(updated);
+        setError('');
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Error al cambiar coordenadas',
+        );
+      } finally {
+        setCoordinatesLoading(false);
+      }
+    },
+    [id],
+  );
+
+  const togglePvp = useCallback(
+    async (enabled: boolean) => {
+      if (!id) return;
+      setPvpLoading(true);
+      try {
+        const updated = await serverFactory.setPvp(id, enabled);
+        serverRef.current = updated;
+        setServer(updated);
+        setError('');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al cambiar pvp');
+      } finally {
+        setPvpLoading(false);
+      }
+    },
+    [id],
+  );
+
   const removeServer = useCallback(async (): Promise<boolean> => {
     if (!id) return false;
     setActionLoading('delete');
@@ -89,7 +129,11 @@ export function useServer(id: string) {
     loading,
     error,
     actionLoading,
+    coordinatesLoading,
+    pvpLoading,
     runAction,
+    toggleCoordinates,
+    togglePvp,
     removeServer,
     refresh: fetchServer,
   };

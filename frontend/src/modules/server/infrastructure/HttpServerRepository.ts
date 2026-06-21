@@ -44,6 +44,22 @@ export class HttpServerRepository implements ServerRepository {
     await apiFetch<void>(`/api/servers/${id}/restart`, { method: 'POST' });
   }
 
+  async setShowCoordinates(id: string, enabled: boolean): Promise<Server> {
+    const data = await apiFetch<ServerPrimitives>(
+      `/api/servers/${id}/coordinates`,
+      { method: 'POST', body: JSON.stringify({ enabled }) },
+    );
+    return Server.fromPrimitive(data);
+  }
+
+  async setPvp(id: string, enabled: boolean): Promise<Server> {
+    const data = await apiFetch<ServerPrimitives>(`/api/servers/${id}/pvp`, {
+      method: 'POST',
+      body: JSON.stringify({ enabled }),
+    });
+    return Server.fromPrimitive(data);
+  }
+
   async delete(id: string): Promise<boolean> {
     await apiFetch<void>(`/api/servers/${id}`, { method: 'DELETE' });
     return true;

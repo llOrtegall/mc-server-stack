@@ -13,6 +13,8 @@ export function create(
     start: vi.fn(async () => {}),
     stop: vi.fn(async () => {}),
     restart: vi.fn(async () => {}),
+    setShowCoordinates: vi.fn(async () => ServerMother.create()),
+    setPvp: vi.fn(async () => ServerMother.create()),
     delete: vi.fn(async () => true),
     ...overrides,
   };

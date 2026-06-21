@@ -9,14 +9,19 @@ function renderDetail(
   status: ServerStatusValue,
   port = 25565,
   edition = 'java',
+  overrides: { showCoordinates?: boolean; pvp?: boolean } = {},
 ) {
   const server = ServerMother.create({
     name: 'Survival',
     status,
     port,
     edition,
+    showCoordinates: overrides.showCoordinates ?? false,
+    pvp: overrides.pvp ?? true,
   });
   const onAction = vi.fn();
+  const onToggleCoordinates = vi.fn();
+  const onTogglePvp = vi.fn();
   const onRequestDelete = vi.fn();
   render(
     <MemoryRouter>
@@ -24,12 +29,16 @@ function renderDetail(
         server={server}
         error=""
         actionLoading={null}
+        coordinatesLoading={false}
+        pvpLoading={false}
         onAction={onAction}
+        onToggleCoordinates={onToggleCoordinates}
+        onTogglePvp={onTogglePvp}
         onRequestDelete={onRequestDelete}
       />
     </MemoryRouter>,
   );
-  return { onAction, onRequestDelete };
+  return { onAction, onToggleCoordinates, onTogglePvp, onRequestDelete };
 }
 
 describe('ServerDetail', () => {
@@ -71,6 +80,44 @@ describe('ServerDetail', () => {
       expect(screen.getByText('Puerto (UDP)')).toBeInTheDocument();
       expect(screen.queryByText('Puerto RCON')).not.toBeInTheDocument();
     });
+
+    it('hides the gamerule toggles for Java servers', () => {
+      renderDetail('running');
+
+      expect(
+        screen.queryByRole('switch', { name: 'Mostrar coordenadas' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('switch', { name: 'PvP' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows the coordinates toggle for Bedrock and reflects its state', () => {
+      renderDetail('running', 19132, 'bedrock', { showCoordinates: true });
+
+      const toggle = screen.getByRole('switch', {
+        name: 'Mostrar coordenadas',
+      });
+      expect(toggle).toBeEnabled();
+      expect(toggle).toBeChecked();
+    });
+
+    it('shows the pvp toggle for Bedrock and reflects its state', () => {
+      renderDetail('running', 19132, 'bedrock', { pvp: false });
+
+      const toggle = screen.getByRole('switch', { name: 'PvP' });
+      expect(toggle).toBeEnabled();
+      expect(toggle).not.toBeChecked();
+    });
+
+    it('disables the gamerule toggles while the Bedrock server is stopped', () => {
+      renderDetail('stopped', 19132, 'bedrock');
+
+      expect(
+        screen.getByRole('switch', { name: 'Mostrar coordenadas' }),
+      ).toBeDisabled();
+      expect(screen.getByRole('switch', { name: 'PvP' })).toBeDisabled();
+    });
   });
 
   describe('Interaction', () => {
@@ -90,6 +137,28 @@ describe('ServerDetail', () => {
       await user.click(screen.getByRole('button', { name: 'Eliminar' }));
 
       expect(onRequestDelete).toHaveBeenCalledTimes(1);
+    });
+
+    it('toggles coordinates on a running Bedrock server', async () => {
+      const user = userEvent.setup();
+      const { onToggleCoordinates } = renderDetail('running', 19132, 'bedrock');
+
+      await user.click(
+        screen.getByRole('switch', { name: 'Mostrar coordenadas' }),
+      );
+
+      expect(onToggleCoordinates).toHaveBeenCalledWith(true);
+    });
+
+    it('toggles pvp off on a running Bedrock server', async () => {
+      const user = userEvent.setup();
+      const { onTogglePvp } = renderDetail('running', 19132, 'bedrock', {
+        pvp: true,
+      });
+
+      await user.click(screen.getByRole('switch', { name: 'PvP' }));
+
+      expect(onTogglePvp).toHaveBeenCalledWith(false);
     });
   });
 });

@@ -31,7 +31,11 @@ export function ServerDetailContainer() {
     loading,
     error,
     actionLoading,
+    coordinatesLoading,
+    pvpLoading,
     runAction,
+    toggleCoordinates,
+    togglePvp,
     removeServer,
     refresh,
   } = useServer(id ?? '');
@@ -81,7 +85,11 @@ export function ServerDetailContainer() {
             server={server}
             error={error}
             actionLoading={actionLoading}
+            coordinatesLoading={coordinatesLoading}
+            pvpLoading={pvpLoading}
             onAction={runAction}
+            onToggleCoordinates={toggleCoordinates}
+            onTogglePvp={togglePvp}
             onRequestDelete={() => setShowDelete(true)}
           />
           <ServerPropertiesPanel server={server} onUpdated={refresh} />

@@ -17,6 +17,8 @@ export interface ServerPrimitives {
   ramMb: number;
   cpuLimit: number;
   properties: ServerPropertiesPrimitives;
+  showCoordinates: boolean;
+  pvp: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +35,8 @@ export class Server {
   private readonly ramMb: number;
   private readonly cpuLimit: number;
   private readonly properties: ServerPropertiesPrimitives;
+  private readonly showCoordinates: boolean;
+  private readonly pvp: boolean;
   private readonly createdAt: string;
   private readonly updatedAt: string;
 
@@ -48,6 +52,8 @@ export class Server {
     ramMb: number;
     cpuLimit: number;
     properties: ServerPropertiesPrimitives;
+    showCoordinates: boolean;
+    pvp: boolean;
     createdAt: string;
     updatedAt: string;
   }) {
@@ -62,6 +68,8 @@ export class Server {
     this.ramMb = props.ramMb;
     this.cpuLimit = props.cpuLimit;
     this.properties = props.properties;
+    this.showCoordinates = props.showCoordinates;
+    this.pvp = props.pvp;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
   }
@@ -80,6 +88,8 @@ export class Server {
       ramMb: data.ramMb,
       cpuLimit: data.cpuLimit,
       properties: data.properties ?? DEFAULT_PROPERTIES,
+      showCoordinates: data.showCoordinates ?? false,
+      pvp: data.pvp ?? true,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });
@@ -129,6 +139,14 @@ export class Server {
     return this.properties;
   }
 
+  getShowCoordinates(): boolean {
+    return this.showCoordinates;
+  }
+
+  getPvp(): boolean {
+    return this.pvp;
+  }
+
   getCreatedAt(): string {
     return this.createdAt;
   }
@@ -150,6 +168,8 @@ export class Server {
       ramMb: this.ramMb,
       cpuLimit: this.cpuLimit,
       properties: this.properties,
+      showCoordinates: this.showCoordinates,
+      pvp: this.pvp,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };

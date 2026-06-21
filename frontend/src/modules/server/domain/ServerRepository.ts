@@ -11,5 +11,7 @@ export interface ServerRepository {
   start: (id: string) => Promise<void>;
   stop: (id: string) => Promise<void>;
   restart: (id: string) => Promise<void>;
+  setShowCoordinates: (id: string, enabled: boolean) => Promise<Server>;
+  setPvp: (id: string, enabled: boolean) => Promise<Server>;
   delete: (id: string) => Promise<boolean>;
 }

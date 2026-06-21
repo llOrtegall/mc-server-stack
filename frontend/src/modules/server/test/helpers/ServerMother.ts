@@ -16,6 +16,8 @@ export function create(overrides: Partial<ServerPrimitives> = {}): Server {
     ramMb: 1024,
     cpuLimit: 1,
     properties: DEFAULT_PROPERTIES,
+    showCoordinates: false,
+    pvp: true,
     createdAt: faker.date.past().toISOString(),
     updatedAt: faker.date.recent().toISOString(),
     ...overrides,
