@@ -62,7 +62,7 @@ export function ServerDetailContainer() {
     <>
       <Link
         to="/"
-        className="inline-flex items-center gap-1 text-sm text-zinc-400 transition-colors hover:text-zinc-200"
+        className="inline-flex items-center gap-1 text-sm text-zinc-400 transition-colors hover:text-zinc-200 px-4"
       >
         <ChevronLeft className="h-4 w-4" />
         Volver
