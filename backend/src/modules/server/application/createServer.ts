@@ -2,6 +2,7 @@ import { Server } from '../domain/Server.js';
 import type { ServerPropertiesInput } from '../domain/ServerProperties.js';
 import type { ServerRepository } from '../domain/ServerRepository.js';
 import type { ServerRuntime } from '../domain/ServerRuntime.js';
+import { provisionServerContainer } from './provisionServerContainer.js';
 
 interface CreateServerProps {
   serverRepository: ServerRepository;
@@ -42,6 +43,14 @@ export async function createServer({
     throw new Error('[createServer] Persisted server is missing an id');
   }
 
-  const containerId = await serverRuntime.provision(created);
-  return serverRepository.update(created.withContainerId(containerId));
+  // Provisioning the container pulls the image (can take minutes), so we don't
+  // block the request on it: return the server in `provisioning` immediately and
+  // let the runtime work happen in the background, flipping the status when done.
+  void provisionServerContainer({
+    serverRepository,
+    serverRuntime,
+    server: created,
+  });
+
+  return created;
 }

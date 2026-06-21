@@ -7,9 +7,13 @@ import * as ServerRuntimeMother from '../helpers/ServerRuntimeMother.js';
 
 describe('createServer (unit)', () => {
   describe('Basic Behaviour', () => {
-    it('persists the server, provisions its runtime and stores the container id', async () => {
+    it('persists the server in `provisioning` and returns immediately without waiting for the runtime', async () => {
       // Arrange
-      const persisted = ServerMother.create({ id: 'srv-1', containerId: null });
+      const persisted = ServerMother.create({
+        id: 'srv-1',
+        containerId: null,
+        status: 'provisioning',
+      });
       const serverRepository = ServerRepositoryMother.create({
         create: mock(async () => persisted),
         update: mock(async (server) => server),
@@ -26,12 +30,31 @@ describe('createServer (unit)', () => {
         port: 25565,
       });
 
-      // Assert
+      // Assert: the request returns the not-yet-provisioned server right away.
       expect(result.getId()).toBe('srv-1');
-      expect(result.getContainerId()).toBe('container-abc');
+      expect(result.getContainerId()).toBeNull();
+      expect(result.toPrimitive().status).toBe('provisioning');
       expect(serverRepository.create).toHaveBeenCalledTimes(1);
+      // The container is provisioned in the background (not awaited here).
       expect(serverRuntime.provision).toHaveBeenCalledWith(persisted);
-      expect(serverRepository.update).toHaveBeenCalledTimes(1);
+    });
+
+    it('starts a brand-new server in the `provisioning` status', async () => {
+      const serverRepository = ServerRepositoryMother.create({
+        create: mock(async (server) => server.withId('srv-prov')),
+      });
+      const serverRuntime = ServerRuntimeMother.create();
+
+      await createServer({
+        serverRepository,
+        serverRuntime,
+        name: 'Srv',
+        port: 25565,
+      });
+
+      const created = (serverRepository.create as ReturnType<typeof mock>).mock
+        .calls[0]?.[0] as Server;
+      expect(created.toPrimitive().status).toBe('provisioning');
     });
 
     it('derives the rcon port as minecraft port + 1', async () => {

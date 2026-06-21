@@ -1,4 +1,5 @@
 export const SERVER_STATUSES = [
+  'provisioning',
   'stopped',
   'starting',
   'running',
@@ -20,8 +21,16 @@ export class ServerStatus {
     return ServerStatus.create(status as ServerStatusValue);
   }
 
+  static provisioning(): ServerStatus {
+    return ServerStatus.create('provisioning');
+  }
+
   static stopped(): ServerStatus {
     return ServerStatus.create('stopped');
+  }
+
+  static error(): ServerStatus {
+    return ServerStatus.create('error');
   }
 
   static ensureIsValid(status: string): asserts status is ServerStatusValue {

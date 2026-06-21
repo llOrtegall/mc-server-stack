@@ -83,8 +83,9 @@ export class Server {
 
   /**
    * Builds a brand-new server from raw input: derives the RCON port (port + 1),
-   * generates a fresh RCON password and starts in the `stopped` state with no id
-   * or container yet (assigned by persistence / runtime).
+   * generates a fresh RCON password and starts in the `provisioning` state with no
+   * id or container yet (assigned by persistence / runtime). The status flips to
+   * `stopped` once the container is created (or `error` if the pull/create fails).
    */
   static provisionNew(input: {
     name: string;
@@ -110,7 +111,7 @@ export class Server {
       rconPort: port.next(),
       rconPassword: RconPassword.generate(),
       containerId: null,
-      status: ServerStatus.stopped(),
+      status: ServerStatus.provisioning(),
       ramMb: RamMb.create(input.ramMb),
       cpuLimit: CpuLimit.create(input.cpuLimit),
       properties: ServerProperties.create(input.properties),
