@@ -7,16 +7,23 @@ describe('ServerStatus (unit)', () => {
       expect(ServerStatus.create('stopped').isRunning()).toBe(false);
     });
 
-    it('treats starting and stopping as transitioning', () => {
+    it('treats provisioning, starting and stopping as transitioning', () => {
+      expect(ServerStatus.create('provisioning').isTransitioning()).toBe(true);
       expect(ServerStatus.create('starting').isTransitioning()).toBe(true);
       expect(ServerStatus.create('stopping').isTransitioning()).toBe(true);
       expect(ServerStatus.create('running').isTransitioning()).toBe(false);
+    });
+
+    it('flags only provisioning as provisioning', () => {
+      expect(ServerStatus.create('provisioning').isProvisioning()).toBe(true);
+      expect(ServerStatus.create('stopped').isProvisioning()).toBe(false);
     });
 
     it('allows start only from stopped or error', () => {
       expect(ServerStatus.create('stopped').canStart()).toBe(true);
       expect(ServerStatus.create('error').canStart()).toBe(true);
       expect(ServerStatus.create('running').canStart()).toBe(false);
+      expect(ServerStatus.create('provisioning').canStart()).toBe(false);
     });
 
     it('allows stop/restart only while running', () => {

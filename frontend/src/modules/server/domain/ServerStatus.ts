@@ -1,4 +1,5 @@
 export const SERVER_STATUSES = [
+  'provisioning',
   'stopped',
   'starting',
   'running',
@@ -44,8 +45,16 @@ export class ServerStatus {
     return this.value === 'running';
   }
 
+  isProvisioning(): boolean {
+    return this.value === 'provisioning';
+  }
+
   isTransitioning(): boolean {
-    return this.value === 'starting' || this.value === 'stopping';
+    return (
+      this.value === 'provisioning' ||
+      this.value === 'starting' ||
+      this.value === 'stopping'
+    );
   }
 
   canStart(): boolean {

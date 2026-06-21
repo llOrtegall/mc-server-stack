@@ -1,6 +1,10 @@
 import type { ServerStatusValue } from '../domain/ServerStatus.js';
 
 const styles: Record<ServerStatusValue, { wrap: string; dot: string }> = {
+  provisioning: {
+    wrap: 'bg-sky-500/10 text-sky-400 ring-sky-500/30',
+    dot: 'bg-sky-400 animate-pulse',
+  },
   running: {
     wrap: 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30',
     dot: 'bg-emerald-400 shadow-[0_0_8px_2px_rgba(52,211,153,0.7)]',
@@ -23,6 +27,12 @@ const styles: Record<ServerStatusValue, { wrap: string; dot: string }> = {
   },
 };
 
+// Most statuses read fine as-is; `provisioning` gets a friendlier label since it
+// is what the user sees right after creating a server (while the image pulls).
+const labels: Partial<Record<ServerStatusValue, string>> = {
+  provisioning: 'creando',
+};
+
 export function StatusBadge({ status }: { status: ServerStatusValue }) {
   const s = styles[status];
   return (
@@ -30,7 +40,7 @@ export function StatusBadge({ status }: { status: ServerStatusValue }) {
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${s.wrap}`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-      {status}
+      {labels[status] ?? status}
     </span>
   );
 }
