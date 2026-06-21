@@ -1,7 +1,6 @@
 import {
   Boxes,
   Calendar,
-  ChevronLeft,
   Cpu,
   MemoryStick,
   Play,
@@ -13,7 +12,6 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
 import { Button } from '../../../shared/components/ui/Button.js';
 import { Card } from '../../../shared/components/ui/Card.js';
 import type { Server } from '../domain/Server.js';
@@ -43,107 +41,97 @@ export function ServerDetail({
   const editionLabel = isBedrock ? 'Bedrock' : 'Java';
 
   return (
-    <div>
-      <Link
-        to="/"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-zinc-400 transition-colors hover:text-zinc-200"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Volver
-      </Link>
-
-      <Card className="p-6">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold text-white">
-              {server.getName()}
-            </h1>
-            <p className="mt-1 font-mono text-xs text-zinc-500">
-              ID: {server.getId()}
-            </p>
-          </div>
-          <StatusBadge status={value} />
-        </div>
-
-        {error && (
-          <p className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-            {error}
+    <Card className="p-6">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="truncate text-2xl font-bold text-white">
+            {server.getName()}
+          </h1>
+          <p className="mt-1 font-mono text-xs text-zinc-500">
+            ID: {server.getId()}
           </p>
+        </div>
+        <StatusBadge status={value} />
+      </div>
+
+      {error && (
+        <p className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          {error}
+        </p>
+      )}
+
+      <div className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/5 sm:grid-cols-3">
+        <Info icon={<Tag />} label="Version" value={server.getVersion()} />
+        <Info icon={<Boxes />} label="Edición" value={editionLabel} />
+        <Info
+          icon={<Plug />}
+          label={isBedrock ? 'Puerto (UDP)' : 'Puerto'}
+          value={String(server.getPort())}
+        />
+        {!isBedrock && (
+          <Info
+            icon={<Terminal />}
+            label="Puerto RCON"
+            value={String(server.getRconPort())}
+          />
         )}
+        <Info
+          icon={<MemoryStick />}
+          label="RAM"
+          value={`${server.getRamMb()} MB`}
+        />
+        <Info
+          icon={<Cpu />}
+          label="CPU Limit"
+          value={String(server.getCpuLimit())}
+        />
+        <Info
+          icon={<Calendar />}
+          label="Creado"
+          value={new Date(server.getCreatedAt()).toLocaleDateString()}
+        />
+      </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/5 sm:grid-cols-3">
-          <Info icon={<Tag />} label="Version" value={server.getVersion()} />
-          <Info icon={<Boxes />} label="Edición" value={editionLabel} />
-          <Info
-            icon={<Plug />}
-            label={isBedrock ? 'Puerto (UDP)' : 'Puerto'}
-            value={String(server.getPort())}
-          />
-          {!isBedrock && (
-            <Info
-              icon={<Terminal />}
-              label="Puerto RCON"
-              value={String(server.getRconPort())}
-            />
-          )}
-          <Info
-            icon={<MemoryStick />}
-            label="RAM"
-            value={`${server.getRamMb()} MB`}
-          />
-          <Info
-            icon={<Cpu />}
-            label="CPU Limit"
-            value={String(server.getCpuLimit())}
-          />
-          <Info
-            icon={<Calendar />}
-            label="Creado"
-            value={new Date(server.getCreatedAt()).toLocaleDateString()}
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="primary"
-            onClick={() => onAction('start')}
-            disabled={busy || !status.canStart()}
-          >
-            <Play className="h-4 w-4" />
-            {actionLoading === 'start' || value === 'starting'
-              ? 'Iniciando...'
-              : 'Iniciar'}
-          </Button>
-          <Button
-            variant="warning"
-            onClick={() => onAction('stop')}
-            disabled={busy || !status.canStopOrRestart()}
-          >
-            <Square className="h-4 w-4" />
-            {actionLoading === 'stop' || value === 'stopping'
-              ? 'Deteniendo...'
-              : 'Detener'}
-          </Button>
-          <Button
-            variant="info"
-            onClick={() => onAction('restart')}
-            disabled={busy || !status.canStopOrRestart()}
-          >
-            <RotateCw className="h-4 w-4" />
-            {actionLoading === 'restart' ? 'Reiniciando...' : 'Reiniciar'}
-          </Button>
-          <Button
-            variant="danger"
-            onClick={onRequestDelete}
-            disabled={busy}
-            className="ml-auto"
-          >
-            <Trash2 className="h-4 w-4" />
-            {actionLoading === 'delete' ? 'Eliminando...' : 'Eliminar'}
-          </Button>
-        </div>
-      </Card>
-    </div>
+      <div className="flex flex-wrap gap-3">
+        <Button
+          variant="primary"
+          onClick={() => onAction('start')}
+          disabled={busy || !status.canStart()}
+        >
+          <Play className="h-4 w-4" />
+          {actionLoading === 'start' || value === 'starting'
+            ? 'Iniciando...'
+            : 'Iniciar'}
+        </Button>
+        <Button
+          variant="warning"
+          onClick={() => onAction('stop')}
+          disabled={busy || !status.canStopOrRestart()}
+        >
+          <Square className="h-4 w-4" />
+          {actionLoading === 'stop' || value === 'stopping'
+            ? 'Deteniendo...'
+            : 'Detener'}
+        </Button>
+        <Button
+          variant="info"
+          onClick={() => onAction('restart')}
+          disabled={busy || !status.canStopOrRestart()}
+        >
+          <RotateCw className="h-4 w-4" />
+          {actionLoading === 'restart' ? 'Reiniciando...' : 'Reiniciar'}
+        </Button>
+        <Button
+          variant="danger"
+          onClick={onRequestDelete}
+          disabled={busy}
+          className="ml-auto"
+        >
+          <Trash2 className="h-4 w-4" />
+          {actionLoading === 'delete' ? 'Eliminando...' : 'Eliminar'}
+        </Button>
+      </div>
+    </Card>
   );
 }
 
